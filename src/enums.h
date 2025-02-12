@@ -507,7 +507,7 @@ enum  CompatibilityType {
     MIN_ROUTE_STEP, NUM_THREADS, SURCHARGE_METHOD,
 	/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
 	TEMP_MODEL,		 DENSITY,			 SPEC_HEAT_CAPACITY,
-	HUMIDITY, EXT_UNIT, GLOBTPAT
+	HUMIDITY, EXT_UNIT, GLOBTPAT, ASCII_OUT, 
 	/* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
 	  };
 

@@ -380,6 +380,11 @@ int DLLEXPORT swmm_start(int saveResults)
 
         // --- open binary output file
         output_open();
+
+        /* START modification by Alejandro Figueroa | EAWAG */
+        // --- open ascii output file
+        if ( outAscii ) output_open_ascii();
+        /* END modification by Alejandro Figueroa | EAWAG */
 				
         // --- open runoff processor
         if ( DoRunoff ) runoff_open();
@@ -597,13 +602,24 @@ void saveResults()
             // --- save current average results to binary file
             //     (which will re-set averages to 0)
             output_saveResults(ReportTime);
+
+            /* START Mod SWMM-HEAT */
+            // --- save current average results to ascii file
+            if (outAscii) output_saveResults_ascii(ReportTime);
+            /* END Mod SWMM-HEAT */
+
             // --- if current time exceeds reporting period then
             //     start computing averages for next period
             if (NewRoutingTime > ReportTime) output_updateAvgResults();
         }
 
+        
         // --- otherwise save interpolated point results
         else output_saveResults(ReportTime);
+        /* START Mod SWMM-HEAT */
+        if (outAscii) output_saveResults_ascii(ReportTime);
+        /* END Mod SWMM-HEAT */
+
 		
         // --- advance to next reporting period
         ReportTime = ReportTime + 1000 * (double)ReportStep;
@@ -632,6 +648,8 @@ int DLLEXPORT swmm_end(void)
     {
         // --- write ending records to binary output file
         if ( Fout.file ) output_end();
+        // --- write ending records to ascii output file
+        if (Foutascii.file) output_end_ascii();
 
         // --- report mass balance results and system statistics
         if ( !ErrorCode && RptFlags.disabled == 0 )
@@ -700,6 +718,20 @@ int DLLEXPORT swmm_close()
         fclose(Fout.file);
         if ( Fout.mode == SCRATCH_FILE ) remove(Fout.name);
     }
+
+    /* START Mod SWMM-HEAT */
+    if (Foutascii.file != NULL)
+    {
+        fclose(Foutascii.file);
+        if ( Foutascii.mode == SCRATCH_FILE ) remove(Foutascii.name);
+    }
+    if (Foutasciih.file != NULL)
+    {
+        fclose(Foutasciih.file);
+        if (Foutasciih.mode == SCRATCH_FILE) remove(Foutasciih.name);
+    }
+    /* END Mod SWMM-HEAT */
+
     IsOpenFlag = FALSE;
     IsStartedFlag = FALSE;
     return 0;
@@ -1518,6 +1550,103 @@ char* getTempFileName(char* fname)
 
 #endif
 }
+
+//=============================================================================
+
+/* START Mod SWMM-HEAT */
+char* getTempFileNameAscii(char* fname)
+//
+//  Input:   fname = file name string (with max size of MAXFNAME)
+//  Output:  returns pointer to file name
+//  Purpose: creates a temporary file name with path prepended to it.
+//  
+{
+    // For Windows systems:
+#ifdef WINDOWS
+
+    char* name = NULL;
+    char* dir = NULL;
+
+    // --- set dir to user's choice of a temporary directory
+    if (strlen(TempDir) > 0)
+    {
+        _mkdir(TempDir);
+        dir = TempDir;
+    }
+
+    // --- use _tempnam to get a pointer to an unused file name
+    name = _tempnam(dir, "ascii.out");
+    if (name == NULL) return NULL;
+
+    // --- copy the file name to fname
+    if (strlen(name) < MAXFNAME) strncpy(fname, name, MAXFNAME);
+    else fname = NULL;
+
+    // --- free the pointer returned by _tempnam
+    free(name);
+
+    // --- return the new contents of fname
+    return fname;
+
+    // For non-Windows systems:
+#else
+
+    // --- use system function mkstemp() to create a temporary file name
+    strcpy(fname, "ascii.out");
+    mkstemp(fname);
+    return fname;
+
+#endif
+}
+
+//=============================================================================
+
+char* getTempFileNameAsciih(char* fname)
+//
+//  Input:   fname = file name string (with max size of MAXFNAME)
+//  Output:  returns pointer to file name
+//  Purpose: creates a temporary file name with path prepended to it.
+//
+{
+    // For Windows systems:
+#ifdef WINDOWS
+
+    char* name = NULL;
+    char* dir = NULL;
+
+    // --- set dir to user's choice of a temporary directory
+    if (strlen(TempDir) > 0)
+    {
+        _mkdir(TempDir);
+        dir = TempDir;
+    }
+
+    // --- use _tempnam to get a pointer to an unused file name
+    name = _tempnam(dir, "ascii_headers.out");
+    if (name == NULL) return NULL;
+
+    // --- copy the file name to fname
+    if (strlen(name) < MAXFNAME) strncpy(fname, name, MAXFNAME);
+    else fname = NULL;
+
+    // --- free the pointer returned by _tempnam
+    free(name);
+
+    // --- return the new contents of fname
+    return fname;
+
+    // For non-Windows systems:
+#else
+
+    // --- use system function mkstemp() to create a temporary file name
+    strcpy(fname, "ascii_headers.out");
+    mkstemp(fname);
+    return fname;
+
+#endif
+}
+
+/* END Mod SWMM-HEAT */
 
 //=============================================================================
 

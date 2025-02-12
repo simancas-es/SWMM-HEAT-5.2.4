@@ -100,7 +100,7 @@ char* OptionWords[]        = { w_FLOW_UNITS,        w_INFIL_MODEL,
 							   /* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
 		       	               w_TEMP_MODEL,			   
 			                   w_DENSITY,			w_SPEC_HEAT_CAPACITY,
-                               w_HUMIDITY,          w_EXT_UNIT, w_GLOBTPAT,
+                               w_HUMIDITY,          w_EXT_UNIT, w_GLOBTPAT, w_ASCII_OUT,
 							   /* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
                                NULL };
 char* OrificeTypeWords[]   = { w_SIDE, w_BOTTOM, NULL};

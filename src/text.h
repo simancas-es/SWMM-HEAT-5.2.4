@@ -114,6 +114,7 @@
 #define  w_HUMIDITY			  "HUMIDITY"
 #define  w_EXT_UNIT			 "EXT_UNIT"
 #define  w_GLOBTPAT			 "GLOBTPAT"
+#define  w_ASCII_OUT		 "ASCII_OUT"
 /* END modification by Peter Schlagbauer | TUGraz */
 
 // Flow Units

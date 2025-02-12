@@ -39,6 +39,10 @@
 EXTERN TFile
                   Finp,                     // Input file
                   Fout,                     // Output file
+                  /* START Mod SWMM-HEAT */
+                  Foutasciih,               // Output header - ascii file
+                  Foutascii,                // Output results - ascii file
+                  /* END Mod SWMM-HEAT */
                   Frpt,                     // Report file
                   Fclimate,                 // Climate file
                   Frain,                    // Rainfall file
@@ -101,7 +105,10 @@ EXTERN int
                   SweepEnd,                 // Day of year when sweeping ends
                   MaxTrials,                // Max. trials for DW routing
                   NumThreads,               // Number of parallel threads used
-                  NumEvents;                // Number of detailed events
+                  NumEvents,                // Number of detailed events
+                  /* START modification by Alejandro Figueroa | EAWAG */
+                  outAscii;                 // Output ASCII file
+                  /* END modification by Alejandro Figueroa | EAWAG */
 
 EXTERN double
                   RouteStep,                // Routing time step (sec)

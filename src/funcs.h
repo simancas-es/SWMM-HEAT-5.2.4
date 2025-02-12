@@ -168,7 +168,11 @@ void    output_readDateTime(long period, DateTime *aDate);
 void    output_readSubcatchResults(long period, int index);
 void    output_readNodeResults(int long, int index);
 void    output_readLinkResults(int long, int index);
-
+/* START Mod SWMM-HEAT */
+int     output_open_ascii(void);
+void    output_end_ascii(void);
+void    output_saveResults_ascii(double reportTime);
+/* END Mod SWMM-HEAT */
 //-----------------------------------------------------------------------------
 //   Groundwater Methods
 //-----------------------------------------------------------------------------
@@ -578,5 +582,8 @@ DateTime getDateTime(double elapsedMsec);     // convert elapsed time to date
 void     getElapsedTime(DateTime aDate,       // convert elapsed date
          int* days, int* hrs, int* mins);
 char*    addAbsolutePath(char *fname);        // add full path to a file name
-
+/* START Mod SWMM-HEAT */
+char*    getTempFileNameAscii(char* s);       // get temporary file name
+char*    getTempFileNameAsciih(char* s);       // get temporary file name
+/* END Mod SWMM-HEAT */
 #endif //FUNCS_H

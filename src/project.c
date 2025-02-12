@@ -790,6 +790,10 @@ int project_readOption(char* s1, char* s2)
       case GLOBTPAT:
           TempModel.GTPattern = atoi(s2);
           break;
+    
+      case ASCII_OUT:
+          outAscii = atoi(s2);
+          break;
 	  /* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
 
     }
@@ -864,6 +868,7 @@ void setDefaults()
    Finflows.file   = NULL;
    Foutflows.file  = NULL;
    Fout.file       = NULL;
+   Foutascii.file = NULL;
    Fout.mode       = NO_FILE;
 
    // Analysis options
@@ -995,11 +1000,14 @@ void openFiles(const char *f1, const char *f2, const char *f3)
     Finp.file = NULL;
     Frpt.file = NULL;
     Fout.file = NULL;
+    Foutascii.file = NULL;
 
     // --- save file names
     sstrncpy(Finp.name, f1, MAXFNAME);
     sstrncpy(Frpt.name, f2, MAXFNAME);
     sstrncpy(Fout.name, f3, MAXFNAME);
+    sstrncpy(Foutascii.name, "ascii.out", MAXFNAME);
+    sstrncpy(Foutasciih.name, "ascii_headers.out", MAXFNAME);
 
     // --- check that file names are not identical
     if (strcomp(f1, f2) || strcomp(f1, f3) || strcomp(f2, f3))
