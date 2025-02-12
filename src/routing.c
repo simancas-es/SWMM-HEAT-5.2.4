@@ -119,8 +119,12 @@ int routing_open()
 
     // --- initialize flow and quality routing systems
     flowrout_init(RouteModel);
-    if ( Fhotstart1.mode == NO_FILE ) qualrout_init();
-
+    if ( Fhotstart1.mode == NO_FILE ){
+		qualrout_init();
+		/* START modification by Alejandro Figueroa | EAWAG */
+		if (TempModel.active == 1) temprout_init();
+		/* END modification by Alejandro Figueroa | EAWAG */
+	}	
     // --- initialize routing events
     if ( NumEvents > 0 ) sortEvents();
     NextEvent = 0;
@@ -247,6 +251,14 @@ void routing_execute(int routingModel, double routingStep)
             inlet_adjustQualInflows();
             qualrout_execute(routingStep);
         }
+		
+		/* START modification by Alejandro Figueroa | EAWAG */
+        // --- route temperature through the drainage network
+        if (TempModel.active == 1 && !IgnoreWTemperature)
+        {
+            temprout_execute(routingStep);
+        }
+        /* END modification by Alejandro Figueroa | EAWAG */
 
         // --- update mass balance totals for flows leaving the system
         removeSystemOutflows(routingStep);
@@ -319,6 +331,15 @@ void  initSystemInflows()
         for (j=0; j<Nobjects[NODE]; j++) node_setOldQualState(j);
         for (j=0; j<Nobjects[LINK]; j++) link_setOldQualState(j);
     }
+	
+	/* START modification by Alejandro Figueroa | EAWAG */
+    // --- replace old water temperature state with new state
+    if (TempModel.active == 1)
+    {
+        for (j = 0; j < Nobjects[NODE]; j++) node_setOldTempState(j);
+        for (j = 0; j < Nobjects[LINK]; j++) link_setOldTempState(j);
+    }
+    /* END modification by Alejandro Figueroa | EAWAG */
 
     // --- set infiltration factor for storage unit seepage
     //     (-1 argument indicates global factor is used)
@@ -479,8 +500,9 @@ void addExternalInflows(DateTime currentDate)
         // --- get pollutant mass inflows
         inflow = Node[j].extInflow;
         while ( inflow )
-        {
-            if ( inflow->type != FLOW_INFLOW )
+        {	/* START modification by Alejandro Figueroa | EAWAG */
+            if ( inflow->type != FLOW_INFLOW && inflow->type != WTEMPERATURE_INFLOW)
+			/* END modification by Alejandro Figueroa | EAWAG */
             {
                 p = inflow->param;
                 w = inflow_getExtInflow(inflow, currentDate);
@@ -490,6 +512,21 @@ void addExternalInflows(DateTime currentDate)
             }
             inflow = inflow->next;
         }
+		/* START modification by Alejandro Figueroa | EAWAG */
+		// --- get temperature inflows
+		inflow = Node[j].extInflow;
+		while (inflow)
+        {
+            if (inflow->type == WTEMPERATURE_INFLOW )
+            {
+                w = inflow_getExtInflow(inflow, currentDate);
+                w *= q;
+                Node[j].newTemp += w;
+                massbal_addInflowTemp(EXTERNAL_INFLOW, w);
+            }
+            inflow = inflow->next;
+        }
+		/* END modification by Alejandro Figueroa | EAWAG */
     }
 }
 
@@ -549,7 +586,21 @@ void addDryWeatherInflows(DateTime currentDate)
                 massbal_addInflowQual(DRY_WEATHER_INFLOW, p, w);
             }
         }
+			
+		/* START modification by Alejandro Figueroa | EAWAG */
 
+        // --- add default DWF temperature inflows
+        if (TempModel.active == 1)
+        {
+            if (WTemperature.dwfTemp > 0.0)
+            {
+                w = q * WTemperature.dwfTemp;
+                Node[j].newTemp += w;
+                massbal_addInflowTemp(DRY_WEATHER_INFLOW, w);
+            }
+        }
+		/* END modification by Alejandro Figueroa | EAWAG */
+		
         // --- get pollutant mass inflows
         inflow = Node[j].dwfInflow;
         while ( inflow )
@@ -571,6 +622,30 @@ void addDryWeatherInflows(DateTime currentDate)
             }
             inflow = inflow->next;
         }
+		
+		/* START modification by Alejandro Figueroa | EAWAG */
+		// --- get temperature inflows
+        inflow = Node[j].dwfInflow;
+        while ( inflow )
+        {
+            if ( inflow->param == -10 ) //DwfInflow Struct in objects.h
+            {
+
+                w = q * inflow_getDwfInflow(inflow, month, day, hour);
+                Node[j].newTemp += w;
+                massbal_addInflowTemp(DRY_WEATHER_INFLOW, w);
+
+                // --- subtract off any default inflow
+                if (WTemperature.dwfTemp > 0.0 )
+                {
+                    w = q * WTemperature.dwfTemp;
+                    Node[j].newTemp -= w;
+                    massbal_addInflowTemp(DRY_WEATHER_INFLOW, -w);
+                }
+            }
+            inflow = inflow->next;
+        }
+        /* END modification by Alejandro Figueroa | EAWAG */
     }
 }
 
@@ -612,6 +687,15 @@ void addWetWeatherInflows(double routingTime)
                 Node[j].newQual[p] += w;
                 massbal_addInflowQual(WET_WEATHER_INFLOW, p, w);
             }
+			/* START modification by Alejandro Figueroa | EAWAG */
+            // add temperature load
+            if (TempModel.active == 1)
+            {
+                w = surftemp_getWtdWashoff(i, f);
+                Node[j].newTemp += w;
+                massbal_addInflowTemp(WET_WEATHER_INFLOW, w);
+            }
+            /* END modification by Alejandro Figueroa | EAWAG */
         }
     }
 }
@@ -663,6 +747,14 @@ void addGroundwaterInflows(double routingTime)
                         Node[j].newQual[p] += w;
                         massbal_addInflowQual(GROUNDWATER_INFLOW, p, w);
                     }
+					/* START modification by Alejandro Figueroa | EAWAG */
+                    if (TempModel.active == 1)
+                    {
+                        w = q * WTemperature.gwTemp;
+                        Node[j].newTemp += w;
+                        massbal_addInflowTemp(GROUNDWATER_INFLOW, w);
+                    }
+                    /* END modification by Alejandro Figueroa | EAWAG */
                 }
             }
         }
@@ -727,6 +819,14 @@ void addRdiiInflows(DateTime currentDate)
                 Node[j].newQual[p] += w;
                 massbal_addInflowQual(RDII_INFLOW, p, w);
             }
+			/* START modification by Alejandro Figueroa | EAWAG */
+            if (TempModel.active == 1)
+            {
+                w = q * WTemperature.rdiiTemp;
+                Node[j].newTemp += w;
+                massbal_addInflowTemp(RDII_INFLOW, w);
+            }
+            /* END modification by Alejandro Figueroa | EAWAG */
         }
     }
 }
@@ -767,6 +867,14 @@ void addIfaceInflows(DateTime currentDate)
                 Node[j].newQual[p] += w;
                 massbal_addInflowQual(EXTERNAL_INFLOW, p, w);
             }
+			/* START modification by Alejandro Figueroa | EAWAG */
+            if (TempModel.active == 1)
+            {
+                w = q * iface_getIfaceTemp(i, Nobjects[POLLUT]);
+                Node[j].newTemp += w;
+                massbal_addInflowTemp(EXTERNAL_INFLOW, w);
+            }
+            /* END modification by Alejandro Figueroa | EAWAG */
         }
     }
 }
@@ -893,6 +1001,10 @@ void removeOutflows(double tStep)
                 Outfall[k].vRouted += v;
                 for (p = 0; p < Nobjects[POLLUT]; p++)
                     Outfall[k].wRouted[p] += Node[i].newQual[p] * v;
+				/* START modification by Alejandro Figueroa | EAWAG */
+				if (TempModel.active == 1)
+                    Outfall[k].tRouted += Node[i].newTemp * v;
+				/* END modification by Alejandro Figueroa | EAWAG */
             }
         }
 
@@ -907,6 +1019,13 @@ void removeOutflows(double tStep)
                 w = q * Node[i].newQual[p];
                 massbal_addOutflowQual(p, w, isFlooded);
             }
+			/* START modification by Alejandro Figueroa | EAWAG */
+			if (TempModel.active == 1)
+            {
+                w = q * Node[i].newTemp;
+                massbal_addOutflowTemp(w, isFlooded);
+            }
+			/* END modification by Alejandro Figueroa | EAWAG */
         }
         else massbal_addInflowFlow(EXTERNAL_INFLOW, -q);
 
@@ -920,6 +1039,13 @@ void removeOutflows(double tStep)
                 w = -q * Node[i].newQual[p];
                 massbal_addOutflowQual(p, w, FALSE);
             }
+			/* START modification by Alejandro Figueroa | EAWAG */
+			if (TempModel.active == 1)
+            {
+                w = -q * Node[i].newTemp;
+                massbal_addOutflowTemp(w, FALSE);
+            }
+			/* END modification by Alejandro Figueroa | EAWAG */
         }
     }
 }

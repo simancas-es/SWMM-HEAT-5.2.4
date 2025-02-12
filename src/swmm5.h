@@ -44,6 +44,10 @@ typedef enum {
     swmm_LINK     = 3,
     swmm_SYSTEM   = 100
 } swmm_Object;
+/* START modification by Alejandro Figueroa | EAWAG */
+int  DLLEXPORT   swmm_getMassBalErr(float* runoffErr, float* flowErr,
+    float* qualErr, float* tempErr);
+/* END modification by Alejandro Figueroa | EAWAG */
 
 typedef enum {
     swmm_JUNCTION = 0,
@@ -135,7 +139,6 @@ int    DLLEXPORT swmm_end(void);
 int    DLLEXPORT swmm_report(void);
 int    DLLEXPORT swmm_close(void);
 
-int    DLLEXPORT swmm_getMassBalErr(float *runoffErr, float *flowErr, float *qualErr);
 int    DLLEXPORT swmm_getVersion(void);
 int    DLLEXPORT swmm_getError(char *errMsg, int msgLen);
 int    DLLEXPORT swmm_getWarnings(void);

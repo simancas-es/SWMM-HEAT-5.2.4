@@ -360,7 +360,10 @@ int DLLEXPORT swmm_start(int saveResults)
         GwaterError = 0.0;
         FlowError = 0.0;
         QualError = 0.0;
-
+		/* START modification by Alejandro Figueroa | EAWAG */
+        TempError = 0.0;
+        /* END modification by Alejandro Figueroa | EAWAG */
+		
         // --- open rainfall processor (creates/opens a rainfall
         //     interface file and generates any RDII flows)
         if ( !IgnoreRainfall ) rain_open();
@@ -377,7 +380,7 @@ int DLLEXPORT swmm_start(int saveResults)
 
         // --- open binary output file
         output_open();
-
+				
         // --- open runoff processor
         if ( DoRunoff ) runoff_open();
 
@@ -594,7 +597,6 @@ void saveResults()
             // --- save current average results to binary file
             //     (which will re-set averages to 0)
             output_saveResults(ReportTime);
-
             // --- if current time exceeds reporting period then
             //     start computing averages for next period
             if (NewRoutingTime > ReportTime) output_updateAvgResults();
@@ -602,7 +604,7 @@ void saveResults()
 
         // --- otherwise save interpolated point results
         else output_saveResults(ReportTime);
-
+		
         // --- advance to next reporting period
         ReportTime = ReportTime + 1000 * (double)ReportStep;
     }
@@ -706,7 +708,7 @@ int DLLEXPORT swmm_close()
 //=============================================================================
 
 int  DLLEXPORT swmm_getMassBalErr(float *runoffErr, float *flowErr,
-                                  float *qualErr)
+                                  float *qualErr, float* tempErr)
 //
 //  Input:   none
 //  Output:  runoffErr = runoff mass balance error (percent)
@@ -716,16 +718,20 @@ int  DLLEXPORT swmm_getMassBalErr(float *runoffErr, float *flowErr,
 //  Purpose: reports a simulation's mass balance errors.
 //
 {
+	/* START modification by Alejandro Figueroa | EAWAG */
     *runoffErr = 0.0;
     *flowErr   = 0.0;
     *qualErr   = 0.0;
-
+	*tempErr   = 0.0;
+	
     if ( IsOpenFlag && !IsStartedFlag)
     {
         *runoffErr = (float)RunoffError;
         *flowErr   = (float)FlowError;
         *qualErr   = (float)QualError;
+		*tempErr   = (float)TempError;
     }
+	/* END modification by Alejandro Figueroa | EAWAG */
     return 0;
 }
 

@@ -178,6 +178,15 @@ void  node_setParams(int j, int type, int k, double x[])
         Storage[k].aCurve  = (int)x[7];
         Node[j].surDepth   = x[8] / UCF(LENGTH);
         Storage[k].fEvap   = x[9];
+		/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
+		Storage[k].thickness = x[9] / UCF(LENGTH);
+		Storage[k].kWall   = x[10];
+		Storage[k].kSoil   = x[11];
+		Storage[k].specHcSoil = x[12];
+		Storage[k].densitySoil = x[13];
+		Storage[k].airPat = x[14];
+		Storage[k].soilPat = x[15];
+		/* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
         break;
 
       case DIVIDER:
@@ -258,6 +267,12 @@ void node_initState(int j)
         Node[j].oldQual[p]  = 0.0;
         Node[j].newQual[p]  = 0.0;
     }
+	
+	/* START modification by Alejandro Figueroa | EAWAG */
+        // --- initialize water temperature state
+        Node[j].oldTemp = NAN;
+        Node[j].newTemp = NAN;
+    /* END modification by Alejandro Figueroa | EAWAG */
 
     // --- initialize any inflow
     Node[j].oldLatFlow = 0.0;
@@ -284,6 +299,9 @@ void node_initState(int j)
         {
             Outfall[k].vRouted = 0.0;
             for (p = 0; p < Nobjects[POLLUT]; p++) Outfall[k].wRouted[p] = 0.0;
+			/* START modification by Alejandro Figueroa | EAWAG */
+            Outfall[k].tRouted = 0.0;
+            /* END modification by Alejandro Figueroa | EAWAG */
         }
     }
 }
@@ -304,7 +322,7 @@ void node_setOldHydState(int j)
 }
 
 //=============================================================================
-
+/* START modification by Alejandro Figueroa | EAWAG */
 void node_setOldQualState(int j)
 //
 //  Input:   j = node index
@@ -320,6 +338,20 @@ void node_setOldQualState(int j)
     }
 }
 
+void node_setOldTempState(int j)
+//
+//  Input:   j = node index
+//  Output:  none
+//  Purpose: replaces a node's old water temperature state values with new ones.
+//
+{
+    //int p;
+    {
+        Node[j].oldTemp = Node[j].newTemp;
+        Node[j].newTemp = 0.0;
+    }
+}
+/* END modification by Alejandro Figueroa | EAWAG */
 //=============================================================================
 
 void node_initFlows(int j, double tStep)
@@ -525,6 +557,13 @@ void node_getResults(int j, double f, float x[])
         z = f1*Node[j].oldQual[p] + f*Node[j].newQual[p];
         x[NODE_QUAL+p] = (float)z;
     }
+	/* START modification by Alejandro Figueroa | EAWAG */
+    if (!IgnoreWTemperature && TempModel.active == 1) 
+    {
+        z = f1 * Node[j].oldTemp + f * Node[j].newTemp;
+        x[NODE_QUAL + Nobjects[POLLUT]] = (float)z;
+    }
+    /* END modification by Alejandro Figueroa | EAWAG */
 }
 
 //=============================================================================
@@ -666,7 +705,10 @@ int storage_readParams(int j, int k, char* tok[], int ntoks)
 //             x[0]  x[1]      x[2]       x[3]       x[4..7]  x[8]     x[9]
 {
     int    i, m, n;
-    double x[10], y[3];
+	/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
+    double x[16];
+	/* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
+	double y[3];
     double A, B;             //base semi-axis length & width for conical shape
     double L, W;             //base length & width for pyramidal shape
     double Z;                //run over rise for conical & pyramidal sides
@@ -798,6 +840,80 @@ int storage_readParams(int j, int k, char* tok[], int ntoks)
             return error_setInpError(ERR_NUMBER, tok[n]);
         n++;
     }
+	
+	/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
+	int startTok;
+	m = findmatch(tok[4], RelationWords);
+	if (m == FUNCTIONAL)
+		startTok = 10;
+	else
+		startTok = 8;
+	
+	// --- parse Thickness code if present
+	x[9] = 0.0;
+	if (ntoks >= startTok)
+	{
+		if (!getDouble(tok[startTok], &x[9]))
+			return error_setInpError(ERR_NUMBER, tok[startTok]);
+		n++;
+	}
+	startTok++;
+	// --- parse k_Wall code if present
+	x[10] = 0.0;
+	if (ntoks >= startTok)
+	{
+		if (!getDouble(tok[startTok], &x[10]))
+			return error_setInpError(ERR_NUMBER, tok[startTok]);
+		n++;
+	}
+	startTok++;
+	// --- parse k_Soil code if present
+	x[11] = 0.0;
+	if (ntoks >= startTok)
+	{
+		if (!getDouble(tok[startTok], &x[11]))
+			return error_setInpError(ERR_NUMBER, tok[startTok]);
+		n++;
+	}
+	startTok++;
+	// --- parse specHcSoil code if present
+	x[12] = 0.0;
+	if (ntoks >= startTok)
+	{
+		if (!getDouble(tok[startTok], &x[12]))
+			return error_setInpError(ERR_NUMBER, tok[startTok]);
+		n++;
+	}
+	startTok++;
+	// --- parse densitySoil code if present
+	x[13] = 0.0;
+	if (ntoks >= startTok)
+	{
+		if (!getDouble(tok[startTok], &x[13]))
+			return error_setInpError(ERR_NUMBER, tok[startTok]);
+		n++;
+	}
+	startTok++;
+	// --- parse AirPattern code if present
+	x[14] = 0.0;
+	if (ntoks >= startTok)
+	{
+		x[14] = project_findObject(TIMEPATTERN, tok[startTok]);
+		if (x[14] < 0) return error_setInpError(ERR_NAME, tok[startTok]);
+		n++;
+	}
+	startTok++;
+	// --- parse SoilPattern code if present
+	x[15] = 0.0;
+
+	if (ntoks >= startTok)
+	{
+		x[15] = project_findObject(TIMEPATTERN, tok[startTok]);
+		if (x[15] < 0) return error_setInpError(ERR_NAME, tok[startTok]);
+		n++;
+	}
+	/* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
+
 
     // --- add parameters to storage unit object
     Node[j].ID = id;
@@ -987,6 +1103,7 @@ double storage_getSurfArea(int j, double d)
     double area = 0.0;
     int k = Node[j].subIndex;
     int i;
+	double result = 0.0;
 
     switch (Storage[k].shape)
     {
@@ -1014,7 +1131,13 @@ double storage_getSurfArea(int j, double d)
 
         default: return 0.0;
     }
-    return area / UCF(LENGTH) / UCF(LENGTH);
+	
+	result = area / UCF(LENGTH) / UCF(LENGTH);
+	/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
+	Storage[k].area = result;
+	/* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
+	
+    return result;
 }
 
 //=============================================================================

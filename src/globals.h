@@ -88,6 +88,9 @@ EXTERN int
                   IgnoreGwater,             // Ignore groundwater
                   IgnoreRouting,            // Ignore flow routing
                   IgnoreQuality,            // Ignore water quality
+				  /* START modification by Alejandro Figueroa | EAWAG */
+                  IgnoreWTemperature,       // Ignore water temperature
+				  /* END modification by Alejandro Figueroa | EAWAG */
                   ErrorCode,                // Error code number
                   Warnings,                 // Number of warning messages
                   WetStep,                  // Runoff wet time step (sec)
@@ -112,6 +115,9 @@ EXTERN double
                   GwaterError,              // Groundwater continuity error
                   FlowError,                // Flow routing error
                   QualError,                // Quality routing error
+				  /* START modification by Alejandro Figueroa | EAWAG */
+                  TempError,                // Temperature routing error
+				  /* END modification by Alejandro Figueroa | EAWAG */
                   HeadTol,                  // DW routing head tolerance (ft)
                   SysFlowTol,               // Tolerance for steady system flow
                   LatFlowTol,               // Tolerance for steady nodal inflow
@@ -159,6 +165,9 @@ EXTERN TOrifice*  Orifice;                  // Array of orifice links
 EXTERN TWeir*     Weir;                     // Array of weir links
 EXTERN TOutlet*   Outlet;                   // Array of outlet device links
 EXTERN TPollut*   Pollut;                   // Array of pollutants
+/* START modification by Alejandro Figueroa | EAWAG */
+EXTERN TWTemperature WTemperature;          // Array of temperature data
+/* END modification by Alejandro Figueroa | EAWAG */
 EXTERN TLanduse*  Landuse;                  // Array of landuses
 EXTERN TPattern*  Pattern;                  // Array of time patterns
 EXTERN TTable*    Curve;                    // Array of curve tables
@@ -167,6 +176,7 @@ EXTERN TTransect* Transect;                 // Array of transect data
 EXTERN TStreet*   Street;                   // Array of defined Street cross-sections
 EXTERN TShape*    Shape;                    // Array of custom conduit shapes
 EXTERN TEvent*    Event;                    // Array of routing events
+EXTERN TTempModel      TempModel;           // Temperature data
 
 
 #endif //GLOBALS_H

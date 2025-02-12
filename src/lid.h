@@ -143,6 +143,9 @@ typedef struct
     TDrainLayer    drain;         // underdrain system parameters
     TDrainMatLayer drainMat;      // drainage mat layer
     double*        drainRmvl;     // underdrain pollutant removals
+	/* START modification by Alejandro Figueroa | EAWAG */ 
+    double         drainRmvlTemp; // underdrain temperature removals    
+	/* END modification by Alejandro Figueroa | EAWAG */ 
 }  TLidProc;
 
 // Water Balance Statistics

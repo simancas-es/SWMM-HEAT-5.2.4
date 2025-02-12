@@ -185,6 +185,77 @@ int  landuse_readPollutParams(int j, char* tok[], int ntoks)
     return 0;
 }
 
+/* START modification by Alejandro Figueroa | EAWAG */
+//=============================================================================
+
+int  landuse_readTempParams(char* tok[], int ntoks)
+//
+//  Input:   tok[] = array of string tokens
+//           ntoks = number of tokens
+//  Output:  returns an error code
+//  Purpose: reads temperature parameters from a tokenized line of input.
+//
+//  Data format is:
+//    ID Units cRain cGW cRDII kDecay (snowOnly coPollut coFrac cDWF cInit)
+//
+{
+    int    i, k;
+    double x[4], coFrac, cDWF, cInit;
+    char* id;
+
+    // --- extract pollutant name & units
+    if (ntoks < 6) return error_setInpError(ERR_ITEMS, "");
+    id = project_findID(WTEMPERATURE, tok[0]);
+    if (id == NULL) return error_setInpError(ERR_NAME, tok[0]);
+    k = findmatch(tok[1], TempUnitsWords);
+    if (k < 0) return error_setInpError(ERR_KEYWORD, tok[1]);
+
+    // --- extract concen. in rain, gwater, & I&I
+    for (i = 2; i <= 4; i++)
+    {
+        if (!getDouble(tok[i], &x[i - 2]) || x[i - 2] < 0.0)
+        {
+            return error_setInpError(ERR_NUMBER, tok[i]);
+        }
+    }
+
+    // --- extract decay coeff. (which can be negative for growth)
+    if (!getDouble(tok[5], &x[3]))
+    {
+        return error_setInpError(ERR_NUMBER, tok[5]);
+    }
+
+    // --- set defaults for snow only flag & co-pollut. parameters
+    cDWF = 0.0;
+    cInit = 0.0;
+    // --- check for DWF concen.
+    if (ntoks >= 7)
+    {
+        if (!getDouble(tok[6], &cDWF) || cDWF < 0.0)
+            return error_setInpError(ERR_NUMBER, tok[6]);
+    }
+
+    // --- check for initial concen.
+    if (ntoks >= 8)
+    {
+        if (!getDouble(tok[7], &cInit) || cInit < 0.0)
+            return error_setInpError(ERR_NUMBER, tok[7]);
+    }
+
+    // --- save values for pollutant object   
+    WTemperature.ID =  id;
+    WTemperature.units = k;
+    WTemperature.mcf = 1.0;
+    WTemperature.pptTemp = x[0];
+    WTemperature.gwTemp = x[1];
+    WTemperature.rdiiTemp = x[2];
+    WTemperature.kDecay = x[3] / SECperDAY;
+    WTemperature.dwfTemp = cDWF;
+    WTemperature.initTemp = cInit;
+    return 0;
+}
+/* END modification by Alejandro Figueroa | EAWAG */
+
 //=============================================================================
 
 int  landuse_readBuildupParams(char* tok[], int ntoks)

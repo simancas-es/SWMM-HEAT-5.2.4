@@ -365,6 +365,13 @@ int  addObject(int objType, char* id)
             errcode = error_setInpError(ERR_DUP_NAME, id);
         Nobjects[POLLUT]++;
         break;
+		
+		/* START modification by Alejandro Figueroa | EAWAG */
+      case s_WTEMPERATURE:
+        if (!project_addObject(WTEMPERATURE, id, 1))
+            errcode = error_setInpError(ERR_DUP_NAME, id);;
+        break;
+         /* END modification by Alejandro Figueroa | EAWAG */
 
       case s_LANDUSE:
         if ( !project_addObject(LANDUSE, id, Nobjects[LANDUSE]) ) 
@@ -558,6 +565,12 @@ int  parseLine(int sect, char *line)
         err = landuse_readPollutParams(j, Tok, Ntokens);
         Mobjects[POLLUT]++;
         return err;
+		
+	  /* START modification by Alejandro Figueroa | EAWAG */
+      case s_WTEMPERATURE:
+        err = landuse_readTempParams(Tok, Ntokens);
+        return err;
+      /* END modification by Alejandro Figueroa | EAWAG */
 
       case s_LANDUSE:
         j = Mobjects[LANDUSE];

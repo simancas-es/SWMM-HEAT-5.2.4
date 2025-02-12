@@ -48,6 +48,9 @@
       NODE,                            // conveyance system node
       LINK,                            // conveyance system link
       POLLUT,                          // pollutant
+	  /* START modification by Alejandro Figueroa | EAWAG */
+      WTEMPERATURE,                    // temperature
+	  /* END modification by Alejandro Figueroa | EAWAG */
       LANDUSE,                         // land use category
       TIMEPATTERN,                     // dry weather flow time pattern
       CURVE,                           // generic table of values
@@ -160,7 +163,10 @@
  enum ConcUnitsType {
       MG,                              // Milligrams / L
       UG,                              // Micrograms / L
-      COUNT};                          // Counts / L
+      COUNT,                           // Counts / L
+	  /* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
+	  CELSIUS};						   // °C Temperature
+	  /* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
 
 //--------------------------------------
 // Quantities requiring unit conversions
@@ -196,7 +202,7 @@
 //-------------------------------------
 // Computed node quantities
 //-------------------------------------
- #define MAX_NODE_RESULTS 7 
+ #define MAX_NODE_RESULTS 8 
  enum NodeResultType {
       NODE_DEPTH,                      // water depth above invert
       NODE_HEAD,                       // hydraulic head
@@ -204,19 +210,25 @@
       NODE_LATFLOW,                    // lateral inflow rate
       NODE_INFLOW,                     // total inflow rate
       NODE_OVERFLOW,                   // overflow rate
-      NODE_QUAL};                      // concentration of each pollutant
-
+      NODE_QUAL,                       // concentration of each pollutant
+	  /* START modification by Alejandro Figueroa | EAWAG */
+	  NODE_WTEMP};                     // temperature
+	  /* END modification by Alejandro Figueroa | EAWAG */
 //-------------------------------------
 // Computed link quantities
 //-------------------------------------
- #define MAX_LINK_RESULTS 6
+/* START modification by Alejandro Figueroa | Eawag */
+ #define MAX_LINK_RESULTS 8
  enum LinkResultType {
       LINK_FLOW,                       // flow rate
       LINK_DEPTH,                      // flow depth
       LINK_VELOCITY,                   // flow velocity
       LINK_VOLUME,                     // link volume
       LINK_CAPACITY,                   // ratio of area to full area
-      LINK_QUAL};                      // concentration of each pollutant
+	  LINK_AIR_VELOCITY,               // air flow velocity
+      LINK_QUAL,                       // concentration of each pollutant
+	  LINK_WTEMP};                     // temperature
+/* END modification by Alejandro Figueroa | Eawag */
 
 //-------------------------------------
 // System-wide quantities
@@ -378,7 +390,10 @@ enum  CompatibilityType {
       RDII_INFLOW,                     // computed I&I inflow
       FLOW_INFLOW,                     // inflow parameter is flow
       CONCEN_INFLOW,                   // inflow parameter is pollutant concen.
-      MASS_INFLOW};                    // inflow parameter is pollutant mass
+      MASS_INFLOW,                    // inflow parameter is pollutant mass
+	  /* START modification by Alejandro Figueroa | EAWAG */
+      WTEMPERATURE_INFLOW};            // inflow parameter is temperature
+	  /* END modification by Alejandro Figueroa | EAWAG */
 
  enum PatternType {
       MONTHLY_PATTERN,                 // DWF multipliers for each month
@@ -461,7 +476,9 @@ enum  CompatibilityType {
       s_JUNCTION,     s_OUTFALL,      s_STORAGE,      s_DIVIDER,
       s_CONDUIT,      s_PUMP,         s_ORIFICE,      s_WEIR,
       s_OUTLET,       s_XSECTION,     s_TRANSECT,     s_LOSSES,
-      s_CONTROL,      s_POLLUTANT,    s_LANDUSE,      s_BUILDUP,
+	  /* START modification by Alejandro Figueroa | EAWAG */
+      s_CONTROL,      s_POLLUTANT,    s_WTEMPERATURE, s_LANDUSE,      s_BUILDUP,
+	  /* END modification by Alejandro Figueroa | EAWAG */
       s_WASHOFF,      s_COVERAGE,     s_INFLOW,       s_DWF,
       s_PATTERN,      s_RDII,         s_UNITHYD,      s_LOADING,
       s_TREATMENT,    s_CURVE,        s_TIMESERIES,   s_REPORT,
@@ -483,9 +500,16 @@ enum  CompatibilityType {
     SKIP_STEADY_STATE, TEMPDIR, IGNORE_RAINFALL,
     FORCE_MAIN_EQN, LINK_OFFSETS, MIN_SLOPE,
     IGNORE_SNOWMELT, IGNORE_GWATER, IGNORE_ROUTING,
-    IGNORE_QUALITY, MAX_TRIALS, HEAD_TOL,
+	/* START modification by Alejandro Figueroa | EAWAG */
+    IGNORE_QUALITY, IGNORE_WTEMPERATURE, MAX_TRIALS, HEAD_TOL,
+	/* END modification by Alejandro Figueroa | EAWAG */
     SYS_FLOW_TOL, LAT_FLOW_TOL, IGNORE_RDII,
-    MIN_ROUTE_STEP, NUM_THREADS, SURCHARGE_METHOD};
+    MIN_ROUTE_STEP, NUM_THREADS, SURCHARGE_METHOD,
+	/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
+	TEMP_MODEL,		 DENSITY,			 SPEC_HEAT_CAPACITY,
+	HUMIDITY, EXT_UNIT, GLOBTPAT
+	/* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
+	  };
 
 enum  NoYesType {
       NO,

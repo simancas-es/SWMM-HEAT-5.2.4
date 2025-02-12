@@ -309,6 +309,21 @@ double surfqual_getWtdWashoff(int j, int p, double f)
 }
 
 //=============================================================================
+/* START modification by Alejandro Figueroa | EAWAG */
+
+double surftemp_getWtdWashoff(int j, double f)
+//
+//  Input:   j = subcatchment index
+//           f = weighting factor
+//  Output:  returns temperature washoff value
+//  Purpose: finds wtd. combination of old and new washoff for a temperature.
+//
+{
+    return (1.0 - f) * Subcatch[j].oldRunoff * Subcatch[j].oldTemp +
+        f * Subcatch[j].newRunoff * Subcatch[j].newTemp;
+}
+/* END modification by Alejandro Figueroa | EAWAG */
+//=============================================================================
 
 void findPondedLoads(int j, double tStep)
 //

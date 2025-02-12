@@ -763,6 +763,34 @@ int project_readOption(char* s1, char* s2)
       case TEMPDIR: // Temporary Directory
         sstrncpy(TempDir, s2, MAXFNAME);
         break;
+	
+	/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
+	  // --- temperature model
+	  case TEMP_MODEL:
+		  TempModel.active = atoi(s2);
+		  break;
+	  
+	  case DENSITY:
+		  TempModel.density = atof(s2);
+		  break;
+	
+	  case SPEC_HEAT_CAPACITY:
+		  TempModel.specHC = atof(s2);
+		  break;
+
+	  case HUMIDITY:
+	  	  TempModel.humidity = atof(s2);
+	  	  break;
+
+	  case EXT_UNIT:
+		  if (strcomp(s2, "T")) TempModel.extUnit = 'T';
+		  else TempModel.extUnit = 'P';
+		  break;
+
+      case GLOBTPAT:
+          TempModel.GTPattern = atoi(s2);
+          break;
+	  /* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
 
     }
     return 0;
@@ -861,6 +889,9 @@ void setDefaults()
    IgnoreGwater    = FALSE;            // Analyze groundwater 
    IgnoreRouting   = FALSE;            // Analyze flow routing
    IgnoreQuality   = FALSE;            // Analyze water quality
+   /* START modification by Alejandro Figueroa | EAWAG */
+   IgnoreWTemperature = FALSE;         // Analyze water temperature
+   /* END modification by Alejandro Figueroa | EAWAG */
    WetStep         = 300;              // Runoff wet time step (secs)
    DryStep         = 3600;             // Runoff dry time step (secs)
    RuleStep        = 0;                // Rules evaluated at each routing step

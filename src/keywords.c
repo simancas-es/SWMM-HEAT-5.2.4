@@ -90,10 +90,18 @@ char* OptionWords[]        = { w_FLOW_UNITS,        w_INFIL_MODEL,
                                w_LINK_OFFSETS,      w_MIN_SLOPE,
                                w_IGNORE_SNOWMELT,   w_IGNORE_GWATER,
                                w_IGNORE_ROUTING,    w_IGNORE_QUALITY,
+							   /* START modification by Alejandro Figueroa | EAWAG */
+                               w_IGNORE_WTEMPERATURE,
+							   /* END modification by Alejandro Figueroa | EAWAG */
                                w_MAX_TRIALS,        w_HEAD_TOL,
                                w_SYS_FLOW_TOL,      w_LAT_FLOW_TOL,
                                w_IGNORE_RDII,       w_MIN_ROUTE_STEP,
                                w_NUM_THREADS,       w_SURCHARGE_METHOD,
+							   /* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
+		       	               w_TEMP_MODEL,			   
+			                   w_DENSITY,			w_SPEC_HEAT_CAPACITY,
+                               w_HUMIDITY,          w_EXT_UNIT, w_GLOBTPAT,
+							   /* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
                                NULL };
 char* OrificeTypeWords[]   = { w_SIDE, w_BOTTOM, NULL};
 char* OutfallTypeWords[]   = { w_FREE, w_NORMAL, w_FIXED, w_TIDAL,
@@ -103,6 +111,9 @@ char* PondingUnitsWords[]  = { w_PONDED_FEET, w_PONDED_METERS };
 char* ProcessVarWords[]    = { w_HRT, w_DT, w_FLOW, w_DEPTH, w_AREA, NULL};
 char* PumpTypeWords[]      = { w_TYPE1, w_TYPE2, w_TYPE3, w_TYPE4, w_TYPE5, w_IDEAL };
 char* QualUnitsWords[]     = { w_MGperL, w_UGperL, w_COUNTperL, NULL};
+/* START modification by Alejandro Figueroa | EAWAG */
+char* TempUnitsWords[] = {  w_CELSIUSperl, NULL };
+/* END modification by Alejandro Figueroa | EAWAG */
 char* RainTypeWords[]      = { w_INTENSITY, w_VOLUME, w_CUMULATIVE, NULL};
 char* RainUnitsWords[]     = { w_INCHES, w_MMETER, NULL};
 char* RelationWords[]      = { w_TABULAR, w_FUNCTIONAL,
@@ -128,6 +139,9 @@ char* SectWords[]          = { ws_TITLE,          ws_OPTION,
                                ws_OUTLET,         ws_XSECTION,
                                ws_TRANSECT,       ws_LOSS,
                                ws_CONTROL,        ws_POLLUTANT,
+							   /* START modification by Alejandro Figueroa | EAWAG */
+                               ws_WTEMPERATURE,
+							   /* END modification by Alejandro Figueroa | EAWAG */
                                ws_LANDUSE,        ws_BUILDUP,
                                ws_WASHOFF,        ws_COVERAGE,
                                ws_INFLOW,         ws_DWF,

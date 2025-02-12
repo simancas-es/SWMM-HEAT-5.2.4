@@ -96,6 +96,9 @@
 #define  w_IGNORE_GWATER     "IGNORE_GROUNDWATER"
 #define  w_IGNORE_ROUTING    "IGNORE_ROUTING"
 #define  w_IGNORE_QUALITY    "IGNORE_QUALITY"
+/* START modification by Alejandro Figueroa | EAWAG */
+#define  w_IGNORE_WTEMPERATURE    "IGNORE_WTEMPERATURE"
+/* END modification by Alejandro Figueroa | EAWAG */
 #define  w_MAX_TRIALS        "MAX_TRIALS"
 #define  w_HEAD_TOL          "HEAD_TOLERANCE"
 #define  w_SYS_FLOW_TOL      "SYS_FLOW_TOL"
@@ -104,6 +107,14 @@
 #define  w_MIN_ROUTE_STEP    "MINIMUM_STEP"
 #define  w_NUM_THREADS       "THREADS"
 #define  w_SURCHARGE_METHOD  "SURCHARGE_METHOD"
+/* START modification by Peter Schlagbauer | TUGraz */
+#define  w_TEMP_MODEL        "TEMP_MODEL"
+#define  w_DENSITY			 "DENSITY" 
+#define  w_SPEC_HEAT_CAPACITY "SPEC_HEAT_CAPACITY"
+#define  w_HUMIDITY			  "HUMIDITY"
+#define  w_EXT_UNIT			 "EXT_UNIT"
+#define  w_GLOBTPAT			 "GLOBTPAT"
+/* END modification by Peter Schlagbauer | TUGraz */
 
 // Flow Units
 #define  w_CFS               "CFS"
@@ -273,6 +284,9 @@
 #define  w_MGperL            "MG/L"
 #define  w_UGperL            "UG/L"
 #define  w_COUNTperL         "#/L"
+/* START modification by Peter Schlagbauer | TUGraz */
+#define  w_CELSIUSperl       "CELSIUS"
+/* END modification by Peter Schlagbauer | TUGraz */
 
 // Mass Units
 #define  w_MG                "MG"
@@ -389,6 +403,9 @@
 #define  w_FLOW              "FLOW"
 #define  w_CONCEN            "CONCEN"
 #define  w_MASS              "MASS"
+/* START modification by Alejandro Figueroa | EAWAG */
+#define  w_WTEMPERATURE       "WTEMPERATURE"
+/* END modification by Alejandro Figueroa | EAWAG */
 
 // Variable Units
 #define  w_FEET              "FEET"
@@ -426,6 +443,9 @@
 #define  ws_LOSS             "[LOSS"
 #define  ws_CONTROL          "[CONTROL"
 #define  ws_POLLUTANT        "[POLLUT"
+/* START modification by Alejandro Figueroa | EAWAG */
+#define  ws_WTEMPERATURE     "[WTEMPERATURE"
+/* END modification by Alejandro Figueroa | EAWAG */
 #define  ws_LANDUSE          "[LANDUSE"
 #define  ws_BUILDUP          "[BUILDUP"
 #define  ws_WASHOFF          "[WASHOFF"

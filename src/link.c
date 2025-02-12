@@ -348,6 +348,16 @@ void  link_setParams(int j, int type, int n1, int n2, int k, double x[])
         Link[j].offset2      = x[3] / UCF(LENGTH);
         Link[j].q0           = x[4] / UCF(FLOW);
         Link[j].qLimit       = x[5] / UCF(FLOW);
+		/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
+		Conduit[k].thickness = x[6] / UCF(LENGTH);
+		Conduit[k].kPipe	 = x[7];
+		Conduit[k].kSoil     = x[8];
+		Conduit[k].specHcSoil = x[9];
+		Conduit[k].densitySoil = x[10];
+		Conduit[k].airPat = x[11];
+		Conduit[k].soilPat = x[12];
+		Conduit[k].thermalEnergy = x[13];
+		/* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
         break;
 
       case PUMP:
@@ -536,6 +546,13 @@ void link_initState(int j)
         Link[j].newQual[p] = 0.0;
         Link[j].totalLoad[p] = 0.0;
     }
+	
+	/* START modification by Alejandro Figueroa | EAWAG */
+    // --- initialize water temperature state
+    Link[j].oldTemp = NAN,
+    Link[j].newTemp = NAN;
+    Link[j].totalLoadT = 0.0;
+    /* END modification by Alejandro Figueroa | EAWAG */
 }
 
 //=============================================================================
@@ -601,6 +618,21 @@ void link_setOldQualState(int j)
 
 //=============================================================================
 
+/* START modification by Alejandro Figueroa | EAWAG */
+ void link_setOldTempState(int j)
+ //
+ //  Input:   j = link index
+ //  Output:  none
+ //  Purpose: replaces link's old water quality state values with current ones.
+ //
+ {
+        Link[j].oldTemp = Link[j].newTemp;
+        Link[j].newTemp = 0.0;
+ }
+
+//=============================================================================
+ /* END modification by Alejandro Figueroa | EAWAG */
+ 
 void link_setTargetSetting(int j)
 //
 //  Input:   j = link index
@@ -684,7 +716,14 @@ void link_getResults(int j, double f, float x[])
            q,                     // flow
            u,                     // velocity
            v,                     // volume
-           c;                     // capacity, setting or concentration
+           c,                     // capacity, setting or concentration
+		   area,                  // link Area
+		   //START MOD SWMM-HEAT		   
+		   width,                 // top width
+		   Hydrar,                // hydraulic radius
+		   dryPerim,              // dry perimeter
+		   u_air;                 // air velocity
+		   //END MOD SWMM-HEAT
     double f1 = 1.0 - f;
 
     y = f1*Link[j].oldDepth + f*Link[j].newDepth;
@@ -692,11 +731,22 @@ void link_getResults(int j, double f, float x[])
     v = f1*Link[j].oldVolume + f*Link[j].newVolume;
     u = link_getVelocity(j, q, y);
     c = 0.0;
+	
+	
+	
     if (Link[j].type == CONDUIT)
     {
         if (Link[j].xsect.type != DUMMY)
-            c = xsect_getAofY(&Link[j].xsect, y) / Link[j].xsect.aFull;
-    }
+		{
+			area = xsect_getAofY(&Link[j].xsect, y);
+			/* START modification by Alejandro Figueroa | EAWAG */			
+			width = getWidth(&Link[j].xsect, y);
+			Hydrar = getHydRad(&Link[j].xsect, y);
+			dryPerim = 3.14159 * Link[j].xsect.yFull - area / Hydrar;
+			/* END modification by Alejandro Figueroa | EAWAG */
+            c = area / Link[j].xsect.aFull;
+		}
+	}
     else c = Link[j].setting;
 
     // --- override time weighting for pump flow between on/off states
@@ -710,17 +760,31 @@ void link_getResults(int j, double f, float x[])
     v *= UCF(VOLUME);
     q *= UCF(FLOW) * (double)Link[j].direction;
     u *= UCF(LENGTH) * (double)Link[j].direction;
+	/* START modification by Alejandro Figueroa | EAWAG */
+	u_air =  0.397 * powl(width * u / dryPerim, 0.7234);
+	/* END modification by Alejandro Figueroa | EAWAG */
     x[LINK_DEPTH]    = (float)y;
     x[LINK_FLOW]     = (float)q;
     x[LINK_VELOCITY] = (float)u;
     x[LINK_VOLUME]   = (float)v;
     x[LINK_CAPACITY] = (float)c;
-
+	/* START modification by Alejandro Figueroa | EAWAG */
+	x[LINK_AIR_VELOCITY] = (float)u_air;
+	/* END modification by Alejandro Figueroa | EAWAG */
+	
     if ( !IgnoreQuality ) for (p = 0; p < Nobjects[POLLUT]; p++)
     {
         c = f1*Link[j].oldQual[p] + f*Link[j].newQual[p];
         x[LINK_QUAL+p] = (float)c;
     }
+	
+	/* START modification by Alejandro Figueroa | EAWAG */
+	if (!IgnoreWTemperature && TempModel.active == 1) 
+    {
+        c = f1 * Link[j].oldTemp + f * Link[j].newTemp;
+        x[LINK_QUAL + Nobjects[POLLUT]] = (float)c;
+	}
+	/* END modification by Alejandro Figueroa | EAWAG */
 }
 
 //=============================================================================
@@ -941,8 +1005,10 @@ int  conduit_readParams(int j, int k, char* tok[], int ntoks)
 //
 {
     int    n1, n2;
-    double x[6];
-    char*  id;
+	/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
+    double x[14];
+    /* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
+	char*  id;
 
     // --- check for valid ID and end node IDs
     if ( ntoks < 7 ) return error_setInpError(ERR_ITEMS, "");
@@ -980,6 +1046,71 @@ int  conduit_readParams(int j, int k, char* tok[], int ntoks)
         if ( !getDouble(tok[8], &x[5]) )
         return error_setInpError(ERR_NUMBER, tok[8]);
     }
+	
+	/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
+	// --- parse Thickness code if present
+	x[6] = 0.0;
+	if (ntoks >= 10)
+	{
+		if (!getDouble(tok[9], &x[6]))
+			return error_setInpError(ERR_NUMBER, tok[9]);
+	}
+
+	// --- parse k_Pipe code if present
+	x[7] = 0.0;
+	if (ntoks >= 11)
+	{
+		if (!getDouble(tok[10], &x[7]))
+			return error_setInpError(ERR_NUMBER, tok[10]);
+	}
+
+	// --- parse k_Soil code if present
+	x[8] = 0.0;
+	if (ntoks >= 12)
+	{
+		if (!getDouble(tok[11], &x[8]))
+			return error_setInpError(ERR_NUMBER, tok[11]);
+	}
+
+	// --- parse specHcSoil code if present
+	x[9] = 0.0;
+	if (ntoks >= 13)
+	{
+		if (!getDouble(tok[12], &x[9]))
+			return error_setInpError(ERR_NUMBER, tok[12]);
+	}
+
+	// --- parse densitySoil code if present
+	x[10] = 0.0;
+	if (ntoks >= 14)
+	{
+		if (!getDouble(tok[13], &x[10]))
+			return error_setInpError(ERR_NUMBER, tok[13]);
+	}
+
+	// --- parse AirPattern code if present
+	x[11] = 0.0;
+	if (ntoks >= 15)
+	{
+		x[11] = project_findObject(TIMEPATTERN, tok[14]);
+		if (x[11] < 0) return error_setInpError(ERR_NAME, tok[14]);
+	}
+
+	// --- parse SoilPattern code if present
+	x[12] = 0.0;
+	if (ntoks >= 16)
+	{
+		x[12] = project_findObject(TIMEPATTERN, tok[15]);
+		if (x[12] < 0) return error_setInpError(ERR_NAME, tok[15]);
+	}
+	// --- parse thermalEnergy code if present
+	x[13] = 0.0;
+	if (ntoks >= 17)
+	{
+		if (!getDouble(tok[16], &x[13]))
+			return error_setInpError(ERR_NUMBER, tok[16]);
+	}
+	/* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
 
     // --- add parameters to data base
     Link[j].ID = id;

@@ -80,6 +80,9 @@ extern TNodeStats*     NodeStats;
 //-----------------------------------------------------------------------------
 static void report_LoadingErrors(int p1, int p2, TLoadingTotals* totals);
 static void report_QualErrors(int p1, int p2, TRoutingTotals* totals);
+/* START modification by Alejandro Figueroa | EAWAG */
+static void report_TempErrors(TRoutingTotals totals);
+/* END modification by Alejandro Figueroa | EAWAG */
 static void report_Subcatchments(void);
 static void report_SubcatchHeader(char *id);
 static void report_Nodes(void);
@@ -918,6 +921,131 @@ void report_QualErrors(int p1, int p2, TRoutingTotals* QualTotals)
     WRITE("");
 }
 
+/* START modification by Alejandro Figueroa | EAWAG */
+
+//=============================================================================
+
+void report_writeTempError(TRoutingTotals TempTotals)
+//
+//  Input:   totals = accumulated temperature routing totals
+//  Output:  none
+//  Purpose: writes temperature routing continuity error to report file.
+//
+{
+    //int p1, p2;
+    //p1 = 1;
+    //p2 = MIN(5, Nobjects[POLLUT]);
+    //while (p1 <= Nobjects[POLLUT])
+    //{
+        report_TempErrors(TempTotals);
+    //    p1 = p2 + 1;
+    //    p2 = p1 + 4;
+    //    p2 = MIN(p2, Nobjects[POLLUT]);
+    //}
+}
+
+//=============================================================================
+
+void report_TempErrors(TRoutingTotals TempTotals)
+{
+    int   i;
+    //int   p;
+    char  units[15];
+
+    WRITE("");
+    fprintf(Frpt.file, "\n  **************************");
+    //for (p = p1; p <= p2; p++)
+    //{
+        fprintf(Frpt.file, "%14s", WTemperature.ID);
+    //}
+    fprintf(Frpt.file, "\n  WTemperature Routing Continuity");
+   // for (p = p1; p <= p2; p++)
+   // {
+        i = UnitSystem;
+        //if (Pollut[p].units == COUNT) i = 2;
+        strcpy(units, LoadUnitsWords[i]);
+        fprintf(Frpt.file, "%14s", units);
+    //}
+    fprintf(Frpt.file, "\n  **************************");
+    //for (p = p1; p <= p2; p++)
+    {
+        fprintf(Frpt.file, "    ----------");
+    }
+
+    fprintf(Frpt.file, "\n  Dry Weather Inflow .......");
+    //for (p = p1; p <= p2; p++)
+    {
+        fprintf(Frpt.file, "%14.3f", TempTotals.dwInflow);
+    }
+
+    fprintf(Frpt.file, "\n  Wet Weather Inflow .......");
+    //for (p = p1; p <= p2; p++)
+    {
+        fprintf(Frpt.file, "%14.3f", TempTotals.wwInflow);
+    }
+
+    fprintf(Frpt.file, "\n  Groundwater Inflow .......");
+    //for (p = p1; p <= p2; p++)
+    {
+        fprintf(Frpt.file, "%14.3f", TempTotals.gwInflow);
+    }
+
+    fprintf(Frpt.file, "\n  RDII Inflow ..............");
+    //for (p = p1; p <= p2; p++)
+    {
+        fprintf(Frpt.file, "%14.3f", TempTotals.iiInflow);
+    }
+
+    fprintf(Frpt.file, "\n  External Inflow ..........");
+    //for (p = p1; p <= p2; p++)
+    {
+        fprintf(Frpt.file, "%14.3f", TempTotals.exInflow);
+    }
+
+    fprintf(Frpt.file, "\n  External Outflow .........");
+    //for (p = p1; p <= p2; p++)
+    {
+        fprintf(Frpt.file, "%14.3f", TempTotals.outflow);
+    }
+
+    fprintf(Frpt.file, "\n  Flooding Loss ............");
+   // for (p = p1; p <= p2; p++)
+    {
+        fprintf(Frpt.file, "%14.3f", TempTotals.flooding);
+    }
+
+    fprintf(Frpt.file, "\n  Exfiltration Loss ........");
+    //for (p = p1; p <= p2; p++)
+    {
+        fprintf(Frpt.file, "%14.3f", TempTotals.seepLoss);
+    }
+
+    fprintf(Frpt.file, "\n  Mass Reacted .............");
+    //for (p = p1; p <= p2; p++)
+    {
+        fprintf(Frpt.file, "%14.3f", TempTotals.reacted);
+    }
+
+    fprintf(Frpt.file, "\n  Initial Stored Mass ......");
+    //for (p = p1; p <= p2; p++)
+    {
+        fprintf(Frpt.file, "%14.3f", TempTotals.initStorage);
+    }
+
+    fprintf(Frpt.file, "\n  Final Stored Mass ........");
+    //for (p = p1; p <= p2; p++)
+    {
+        fprintf(Frpt.file, "%14.3f", TempTotals.finalStorage);
+    }
+
+    fprintf(Frpt.file, "\n  Continuity Error (%%) .....");
+    //for (p = p1; p <= p2; p++)
+    {
+        fprintf(Frpt.file, "%14.3f", TempTotals.pctError);
+    }
+    WRITE("");
+}
+/* END modification by Alejandro Figueroa | EAWAG */
 //=============================================================================
 
 void report_writeMaxStats(TMaxStats maxMassBalErrs[], TMaxStats maxCourantCrit[],
@@ -1294,6 +1422,10 @@ void report_Nodes()
                     NodeResults[NODE_HEAD]);
                 if ( !IgnoreQuality ) for (p = 0; p < Nobjects[POLLUT]; p++)
                     fprintf(Frpt.file, " %9.3f", NodeResults[NODE_QUAL + p]);
+				/* START modification by Alejandro Figueroa | EAWAG */
+                if (!IgnoreWTemperature) 
+                    fprintf(Frpt.file, " %9.3f", NodeResults[NODE_QUAL + Nobjects[POLLUT]]);
+				/* END modification by Alejandro Figueroa | EAWAG */
             }
             WRITE("");
         }
@@ -1373,6 +1505,10 @@ void report_Links()
                 if ( !IgnoreQuality ) for (p = 0; p < Nobjects[POLLUT]; p++)
                     fprintf(Frpt.file, " %9.3f", LinkResults[LINK_QUAL + p]);
             }
+			/* START modification by Alejandro Figueroa | EAWAG */
+            if (!IgnoreWTemperature) 
+                fprintf(Frpt.file, " %9.3f", LinkResults[LINK_QUAL + Nobjects[POLLUT]]);
+			/* END modification by Alejandro Figueroa | EAWAG */
             WRITE("");
         }
     }

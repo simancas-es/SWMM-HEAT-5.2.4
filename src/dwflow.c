@@ -44,10 +44,10 @@ static void   findSurfArea(int link, double q, double length, double* h1,
 static double findLocalLosses(int link, double a1, double a2, double aMid,
               double q);
 
-static double getWidth(TXsect* xsect, double y);
+double getWidth(TXsect* xsect, double y);
 static double getSlotWidth(TXsect* xsect, double y);
 static double getArea(TXsect* xsect, double y, double wSlot);
-static double getHydRad(TXsect* xsect, double y);
+double getHydRad(TXsect* xsect, double y);
 
 static double checkNormalFlow(int j, double q, double y1, double y2,
               double a1, double r1);
@@ -290,6 +290,12 @@ void  dwflow_findConduitFlow(int j, int steps, double omega, double dt)
     Conduit[k].fullState = link_getFullState(a1, a2, xsect->aFull);
     Link[j].newVolume = aMid * link_getLength(j) * barrels;
     Link[j].newFlow = q * barrels;
+	
+	/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
+    Conduit[k].oldwetp = Conduit[k].wetp;
+    Conduit[k].wetp = aMid / rMid;
+    Conduit[k].velocity = qOld * barrels / aOld;
+	/* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
 }
 
 //=============================================================================
@@ -472,6 +478,12 @@ void findSurfArea(int j, double q, double length, double* h1, double* h2,
         widthMid = getWidth(xsect, flowDepthMid);
         surfArea1 = (width1 + widthMid) * length / 4.;
         surfArea2 = (widthMid + width2) * length / 4. * fasnh;
+		
+		/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
+        Conduit[Link[j].subIndex].oldwidth = Conduit[Link[j].subIndex].width;
+        Conduit[Link[j].subIndex].width = (widthMid + width1 + widthMid + width2 ) / 4.;
+		/* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
+
         break;
 
       case UP_CRITICAL:
@@ -484,6 +496,11 @@ void findSurfArea(int j, double q, double length, double* h1, double* h2,
         width2   = getWidth(xsect, flowDepth2);
         widthMid = getWidth(xsect, flowDepthMid);
         surfArea2 = (widthMid + width2) * length * 0.5;
+		
+		/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
+        Conduit[Link[j].subIndex].oldwidth = Conduit[Link[j].subIndex].width;
+		Conduit[Link[j].subIndex].width = (width2 + widthMid) / 2.;
+		/* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
         break;
 
       case DN_CRITICAL:
@@ -496,6 +513,11 @@ void findSurfArea(int j, double q, double length, double* h1, double* h2,
         if ( flowDepthMid < FUDGE ) flowDepthMid = FUDGE;
         widthMid = getWidth(xsect, flowDepthMid);
         surfArea1 = (width1 + widthMid) * length * 0.5;
+		
+		/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
+        Conduit[Link[j].subIndex].oldwidth = Conduit[Link[j].subIndex].width;
+		Conduit[Link[j].subIndex].width = (width1 + widthMid) / 2.;
+		/* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
         break;
 
       case UP_DRY:
@@ -516,6 +538,11 @@ void findSurfArea(int j, double q, double length, double* h1, double* h2,
         {
             surfArea1 = (width1 + widthMid) * length / 4.;
         }
+		
+		/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
+        Conduit[Link[j].subIndex].oldwidth = Conduit[Link[j].subIndex].width;
+		Conduit[Link[j].subIndex].width = (widthMid + width1 + widthMid + width2 ) / 4.;
+		/* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
         break;
 
       case DN_DRY:
@@ -536,11 +563,21 @@ void findSurfArea(int j, double q, double length, double* h1, double* h2,
         {
             surfArea2 = (width2 + widthMid) * length / 4.;
         }
+		
+		/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
+        Conduit[Link[j].subIndex].oldwidth = Conduit[Link[j].subIndex].width;
+		Conduit[Link[j].subIndex].width = (widthMid + width1 + widthMid + width2) / 4.;
+		/* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
         break;
 
       case DRY:
         surfArea1 = FUDGE * length / 2.0;
         surfArea2 = surfArea1;
+		
+		/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
+        Conduit[Link[j].subIndex].oldwidth = Conduit[Link[j].subIndex].width;
+		Conduit[Link[j].subIndex].width = FUDGE;
+		/* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | EAWAG */
         break;
     }
     Link[j].surfArea1 = surfArea1;

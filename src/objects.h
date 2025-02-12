@@ -409,8 +409,14 @@ typedef struct
    double        newSnowDepth;    // current snow depth (ft)
    double*       oldQual;         // previous runoff quality (mass/L)
    double*       newQual;         // current runoff quality (mass/L)
+   /* START modification by Alejandro Figueroa | EAWAG */
+   double        oldTemp;         // previous runoff temperature
+   double        newTemp;         // current runoff temperature
    double*       pondedQual;      // ponded surface water quality (mass)
    double*       totalLoad;       // total washoff load (lbs or kg)
+   double        pondedQualT;      // ponded surface water temperature
+   double        totalLoadT;       // total washoff load temperature
+   /* END modification by Alejandro Figueroa | EAWAG */
 }  TSubcatch;
 
 //-----------------------
@@ -430,7 +436,9 @@ typedef struct
 struct ExtInflow
 {
    int            param;         // pollutant index (flow = -1)
-   int            type;          // CONCEN or MASS
+   /* START modification by Alejandro Figueroa | EAWAG */
+   int            type;          // CONCEN, MASS or WTEMPERATURE
+   /* END modification by Alejandro Figueroa | EAWAG */
    int            tSeries;       // index of inflow time series
    int            basePat;       // baseline time pattern
    double         cFactor;       // units conversion factor for mass inflow
@@ -445,7 +453,9 @@ typedef struct ExtInflow TExtInflow;
 //-------------------------------
 struct DwfInflow
 {
-   int            param;          // pollutant index (flow = -1)
+   /* START modification by Alejandro Figueroa | EAWAG */
+   int            param;          // pollutant index (flow = -1, temperature = -10)
+   /* END modification by Alejandro Figueroa | EAWAG */
    double         avgValue;       // average value (cfs or concen.)
    int            patterns[4];    // monthly, daily, hourly, weekend time patterns
    struct DwfInflow* next;        // pointer to next inflow data object
@@ -521,6 +531,10 @@ typedef struct
    double        newLatFlow;      // current lateral inflow (cfs)
    double*       oldQual;         // previous quality state
    double*       newQual;         // current quality state
+   /* START modification by Alejandro Figueroa | EAWAG */
+   double        oldTemp;         // previous temperature state
+   double        newTemp;         // current temperature state
+   /* END modification by Alejandro Figueroa | EAWAG */
    double        oldFlowInflow;   // previous flow inflow
    double        oldNetInflow;    // previous net inflow
    double        qualInflow;      // inflow seen for quality routing (cfs)
@@ -541,6 +555,9 @@ typedef struct
    int        routeTo;            // subcatchment index routed onto
    double     vRouted;            // flow volume routed (ft3)
    double*    wRouted;            // pollutant load routed (mass)
+   /* START modification by Alejandro Figueroa | EAWAG */
+   double     tRouted;            // temperature load routed 
+   /* END modification by Alejandro Figueroa | EAWAG */
 }  TOutfall;
 
 //--------------------
@@ -559,6 +576,17 @@ typedef struct
    double      hrt;               // hydraulic residence time (sec)
    double      evapLoss;          // evaporation loss (ft3) 
    double      exfilLoss;         // exfiltration loss (ft3)
+   /* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
+   double      thickness;         // wall thickness (ft)
+   double      kWall;             // thermal conductivity pipe (W/m.K)
+   double      kSoil;             // thermal conductivity soil (W/m.K)
+   double      specHcSoil;        // specific heat capacity of surrounding soil (J/kg.K)
+   double      densitySoil;       // density of surrounding soil (kg/m3)
+   double      penDepth;          // penetrationDepth (calculated) (m)
+   double      airPat;            // insewer-air pattern
+   double      soilPat;           // soil pattern
+   double      area;              // top area of flow surface at each time step (ft)
+   /* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
 }  TStorage;
 
 //--------------------
@@ -697,6 +725,11 @@ typedef struct
    double*       oldQual;         // previous quality state
    double*       newQual;         // current quality state
    double*       totalLoad;       // total quality mass loading
+   /* START modification by Alejandro Figueroa | EAWAG */
+   double        oldTemp;         // previous temperature state
+   double        newTemp;         // current temperature state
+   double        totalLoadT;       // total heat mass loading
+   /* END modification by Alejandro Figueroa | EAWAG */
    int           flowClass;       // flow classification
    double        dqdh;            // change in flow w.r.t. head (ft2/sec)
    signed char   direction;       // flow direction flag
@@ -728,6 +761,22 @@ typedef struct
    char          superCritical;   // super-critical flow flag
    char          hasLosses;       // local losses flag
    char          fullState;       // determines if either or both ends full
+   /* START modification by Alejandro Figueroa | Eawag */
+   double		 thickness;		  // wall thickness (ft)
+   double		 kPipe;			  // thermal conductivity pipe (W/m.K)
+   double		 kSoil;			  // thermal conductivity soil (W/m.K)
+   double		 specHcSoil;      // specific heat capacity of surrounding soil (J/kg.K)
+   double        densitySoil;	  // density of surrounding soil (kg/m3)
+   double        penDepth;  	  // penetrationDepth (calculated) (ft)
+   double		 airPat;	      // insewer-air pattern
+   double		 soilPat;		  // soil pattern
+   double        wetp;            // wetted perimeter at each time step (ft)
+   double        oldwetp;         // wetted perimeter at old time step (ft)
+   double        width;           // top width of flow surface at each time step (ft)
+   double        oldwidth;        // top width of flow surface at old time step (ft)
+   double		 velocity;		  // velocity (ft/s)
+   double		 thermalEnergy;	  // use of thermal energy (kW or C)
+   /* END modification by Alejandro Figueroa | Eawag */
 }  TConduit;
 
 //------------
@@ -811,6 +860,27 @@ typedef struct
    double        coFraction;      // co-pollutant fraction
    int           snowOnly;        // TRUE if buildup occurs only under snow
 }  TPollut;
+
+/* START modification by Alejandro Figueroa | EAWAG */
+//-----------------
+// WATER TEMPERATURE OBJECT
+//-----------------
+typedef struct
+{
+    char*         ID;              // Temperature ID
+    int           units;           // units
+    double        mcf;             // mass conversion factor
+    double        dwfTemp;         // dry weather sanitary flow Temperature.
+    double        pptTemp;         // precip. Temperature.
+    double        gwTemp;          // groundwater Temperature.
+    double        rdiiTemp;        // RDII Temperature.
+    double        initTemp;        // initial Temperature in conveyance network
+    double        kDecay;          // decay constant (1/sec)
+    //int           coPollut;      // co-Temperature index
+    //double        coFraction;    // co-Temperature fraction
+    //int           snowOnly;      // TRUE if buildup occurs only under snow
+}  TWTemperature;
+/* END modification by Alejandro Figueroa | EAWAG */
 
 //------------------------
 // BUILDUP FUNCTION OBJECT
@@ -1022,7 +1092,10 @@ typedef struct
 {
    double       avgFlow;
    double       maxFlow;
-   double*      totalLoad;   
+   double*      totalLoad;
+   /* START modification by Alejandro Figueroa | EAWAG */
+   double       totalLoadT;
+   /* END modification by Alejandro Figueroa | EAWAG */   
    int          totalPeriods;
 }  TOutfallStats;
 
@@ -1086,5 +1159,21 @@ typedef struct
    char          Enabled;         // TRUE if appears in report table
    int           Precision;       // number of decimal places when reported
 }  TRptField;
+
+/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
+//-------------------
+// TEMPERATURE Model
+//-------------------
+typedef struct
+{
+	int            active;
+	double		  density;
+	double		   specHC;
+	//double		  ua;
+    double       humidity;
+	char          extUnit;
+    int         GTPattern;
+}  TTempModel;
+/* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
 
 #endif //OBJECTS_H

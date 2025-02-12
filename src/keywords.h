@@ -50,6 +50,9 @@ extern char* PondingUnitsWords[];
 extern char* ProcessVarWords[];
 extern char* PumpTypeWords[];
 extern char* QualUnitsWords[];
+/* START modification by Alejandro Figueroa | EAWAG */
+extern char* TempUnitsWords[];
+/* END modification by Alejandro Figueroa | EAWAG */
 extern char* RainTypeWords[];
 extern char* RainUnitsWords[];
 extern char* ReportWords[];

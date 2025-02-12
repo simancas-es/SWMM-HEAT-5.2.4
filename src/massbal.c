@@ -49,11 +49,14 @@ TRunoffTotals    RunoffTotals;    // overall surface runoff continuity totals
 TLoadingTotals*  LoadingTotals;   // overall WQ washoff continuity totals
 TGwaterTotals    GwaterTotals;    // overall groundwater continuity totals 
 TRoutingTotals   FlowTotals;      // overall routed flow continuity totals 
-TRoutingTotals*  QualTotals;      // overall routed WQ continuity totals 
+TRoutingTotals*  QualTotals;      // overall routed WQ continuity totals
+/* START modification by Alejandro Figueroa | EAWAG */
+TRoutingTotals   TempTotals;      // overall routed WTemperature continuity totals  
 TRoutingTotals   StepFlowTotals;  // routed flow totals over time step
 TRoutingTotals   OldStepFlowTotals;
 TRoutingTotals*  StepQualTotals;  // routed WQ totals over time step
-
+TRoutingTotals   StepTempTotals;  // routed WTemperature totals over time step
+/* END modification by Alejandro Figueroa | EAWAG */
 //-----------------------------------------------------------------------------
 //  Exportable variables
 //-----------------------------------------------------------------------------
@@ -90,10 +93,15 @@ double   TotalArea;               // total drainage area (ft2)
 double massbal_getBuildup(int pollut);
 double massbal_getStorage(char isFinalStorage);
 double massbal_getStoredMass(int pollut);
+/* START modification by Alejandro Figueroa | EAWAG */
+double tempbal_getStoredMass();
+/* END modification by Alejandro Figueroa | EAWAG */
 double massbal_getLoadingError(void);
 double massbal_getGwaterError(void);
 double massbal_getQualError(void);
-
+/* START modification by Alejandro Figueroa | EAWAG */
+double massbal_getTempError(void);
+/* END modification by Alejandro Figueroa | EAWAG */
 
 //=============================================================================
 
@@ -111,6 +119,9 @@ int massbal_open()
     GwaterError = 0.0;
     FlowError   = 0.0;
     QualError   = 0.0;
+	/* START modification by Alejandro Figueroa | EAWAG */
+    TempError   = 0.0;
+    /* END modification by Alejandro Figueroa | EAWAG */
 
     // --- initialize runoff totals
     RunoffTotals.rainfall    = 0.0;
@@ -217,6 +228,24 @@ int massbal_open()
         QualTotals[j].reacted  = 0.0;
         QualTotals[j].initStorage = massbal_getStoredMass(j);
     }
+	
+	/* START modification by Alejandro Figueroa | EAWAG */
+    // --- initialize node flow & storage totals
+    if (TempModel.active == 1)
+    {
+        TempTotals.dwInflow = 0.0;
+        TempTotals.wwInflow = 0.0;
+        TempTotals.gwInflow = 0.0;
+        TempTotals.iiInflow = 0.0;
+        TempTotals.exInflow = 0.0;
+        TempTotals.flooding = 0.0;
+        TempTotals.outflow = 0.0;
+        TempTotals.evapLoss = 0.0;
+        TempTotals.seepLoss = 0.0;
+        TempTotals.reacted = 0.0;
+        TempTotals.initStorage = tempbal_getStoredMass();
+    }
+        /* END modification by Alejandro Figueroa | EAWAG */
 
     // --- initialize totals used over a single time step
     massbal_initTimeStepTotals();
@@ -308,6 +337,14 @@ void massbal_report()
                  RptFlags.continuity == TRUE
                ) report_writeQualError(QualTotals);
         }
+		/* START modification by Alejandro Figueroa | EAWAG */
+        if (TempModel.active == 1 && !IgnoreWTemperature)
+        {
+            if (massbal_getTempError() > MAX_FLOW_BALANCE_ERR ||
+                RptFlags.continuity == TRUE
+                ) report_writeTempError(TempTotals);
+        }
+        /* END modification by Alejandro Figueroa | EAWAG */
     }
 }
 
@@ -411,6 +448,22 @@ void massbal_initTimeStepTotals()
         StepQualTotals[j].initStorage = 0.0;
         StepQualTotals[j].finalStorage = 0.0;
     }
+	/* START modification by Alejandro Figueroa | EAWAG */
+    if (TempModel.active == 1)
+    {
+        StepTempTotals.dwInflow = 0.0;
+        StepTempTotals.wwInflow = 0.0;
+        StepTempTotals.gwInflow = 0.0;
+        StepTempTotals.iiInflow = 0.0;
+        StepTempTotals.exInflow = 0.0;
+        StepTempTotals.flooding = 0.0;
+        StepTempTotals.outflow = 0.0;
+        StepTempTotals.reacted = 0.0;
+        StepTempTotals.seepLoss = 0.0;
+        StepTempTotals.initStorage = 0.0;
+        StepTempTotals.finalStorage = 0.0;
+    }
+    /* END modification by Alejandro Figueroa | EAWAG */
 }
 
 //=============================================================================
@@ -479,6 +532,29 @@ void massbal_addInflowQual(int type, int p, double w)
 }
 
 //=============================================================================
+/* START modification by Alejandro Figueroa | EAWAG */
+
+void massbal_addInflowTemp(int type, double w)
+//
+//  Input:   type = type of inflow
+//           w    = mass flow rate (mass/sec)
+//  Output:  none
+//  Purpose: adds temperature inflow to routing totals for current time step.
+//
+{
+    switch (type)
+    {
+    case DRY_WEATHER_INFLOW: StepTempTotals.dwInflow += w; break;
+    case WET_WEATHER_INFLOW: StepTempTotals.wwInflow += w; break;
+    case GROUNDWATER_INFLOW: StepTempTotals.gwInflow += w; break;
+    case EXTERNAL_INFLOW:    StepTempTotals.exInflow += w; break;
+    case RDII_INFLOW:        StepTempTotals.iiInflow += w; break;
+    }
+}
+//=============================================================================
+/* END modification by Alejandro Figueroa | EAWAG */
+
+//=============================================================================
 
 void massbal_addOutflowFlow(double q, int isFlooded)
 //
@@ -512,6 +588,26 @@ void massbal_addOutflowQual(int p, double w, int isFlooded)
     else StepQualTotals[p].exInflow -= w;
 }
 
+/* START modification by Alejandro Figueroa | EAWAG */
+//=============================================================================
+
+void massbal_addOutflowTemp(double w, int isFlooded)
+//
+//  Input:   w = mass outflow rate (mass/sec)
+//           isFlooded = TRUE if outflow represents internal flooding
+//  Output:  none
+//  Purpose: adds temperature outflow over current time step to routing totals.
+//
+{
+    if (w >= 0.0)
+    {
+        if (isFlooded) StepTempTotals.flooding += w;
+        else            StepTempTotals.outflow += w;
+    }
+    else StepTempTotals.exInflow -= w;
+}
+/* END modification by Alejandro Figueroa | EAWAG */
+
 //=============================================================================
 
 void massbal_addReactedMass(int p, double w)
@@ -540,6 +636,20 @@ void massbal_addSeepageLoss(int p, double w)
     StepQualTotals[p].seepLoss += w;
 }
 
+/* START modification by Alejandro Figueroa | EAWAG */
+//=============================================================================
+
+void massbal_addSeepageLossT(double w)
+//
+//  Input:   w = mass seepage rate (mass/sec)
+//  Output:  none
+//  Purpose: adds mass lost to seepage during current time step to routing totals.
+//
+{
+    StepTempTotals.seepLoss += w;
+}
+/* END modification by Alejandro Figueroa | EAWAG */
+
 //=============================================================================
 
 void massbal_addToFinalStorage(int p, double w)
@@ -553,6 +663,20 @@ void massbal_addToFinalStorage(int p, double w)
     if ( p < 0 || p >= Nobjects[POLLUT] ) return;
     StepQualTotals[p].finalStorage += w;
 }
+
+/* START modification by Alejandro Figueroa | EAWAG */
+//=============================================================================
+
+void massbal_addToFinalStorageT(double w)
+//
+//  Input:   w = temperature mass
+//  Output:  none
+//  Purpose: adds mass remaining on dry surface to routing totals.
+//
+{
+    StepTempTotals.finalStorage += w;
+}
+/* END modification by Alejandro Figueroa | EAWAG */
 
 //=============================================================================
 
@@ -615,6 +739,22 @@ void massbal_updateRoutingTotals(double tStep)
         QualTotals[j].seepLoss += StepQualTotals[j].seepLoss * tStep;
         QualTotals[j].finalStorage += StepQualTotals[j].finalStorage;
     }
+	
+	/* START modification by Alejandro Figueroa | EAWAG */
+    if(TempModel.active == 1)
+    {
+        TempTotals.dwInflow += StepTempTotals.dwInflow * tStep;
+        TempTotals.wwInflow += StepTempTotals.wwInflow * tStep;
+        TempTotals.gwInflow += StepTempTotals.gwInflow * tStep;
+        TempTotals.iiInflow += StepTempTotals.iiInflow * tStep;
+        TempTotals.exInflow += StepTempTotals.exInflow * tStep;
+        TempTotals.flooding += StepTempTotals.flooding * tStep;
+        TempTotals.outflow += StepTempTotals.outflow * tStep;
+        TempTotals.reacted += StepTempTotals.reacted * tStep;
+        TempTotals.seepLoss += StepTempTotals.seepLoss * tStep;
+        TempTotals.finalStorage += StepTempTotals.finalStorage;
+    }       
+    /* END modification by Alejandro Figueroa | EAWAG */
 
     for (j = 0; j < Nobjects[NODE]; j++)
     {
@@ -992,6 +1132,80 @@ double massbal_getQualError()
 }
 //=============================================================================
 
+/* START modification by Alejandro Figueroa | EAWAG */
+//=============================================================================
+
+double massbal_getTempError()
+//
+//  Input:   none
+//  Output:  none
+//  Purpose: computes water temperature routing mass balance error.
+//
+{
+    double maxTempError = 0.0;
+    double totalInflow;
+    double totalOutflow;
+    double cf;
+
+    // --- analyze each pollutant
+    {
+        // --- get final mass stored in nodes and links
+        TempTotals.finalStorage += tempbal_getStoredMass();
+
+        // --- compute % difference between total inflow and outflow
+        totalInflow = TempTotals.dwInflow +
+            TempTotals.wwInflow +
+            TempTotals.gwInflow +
+            TempTotals.iiInflow +
+            TempTotals.exInflow +
+            TempTotals.initStorage;
+        totalOutflow = TempTotals.flooding +
+            TempTotals.outflow +
+            TempTotals.reacted +
+            TempTotals.seepLoss +
+            TempTotals.finalStorage;
+        TempTotals.pctError = 0.0;
+        if (fabs(totalInflow - totalOutflow) < 0.001)
+        {
+            TempTotals.pctError = TINY;
+        }
+        else if (totalInflow > 0.0)
+        {
+            TempTotals.pctError = 100.0 * (1.0 - totalOutflow / totalInflow);
+        }
+        else if (totalOutflow > 0.0)
+        {
+            TempTotals.pctError = 100.0 * (totalInflow / totalOutflow - 1.0);
+        }
+
+        // --- update max. error among all pollutants
+        if (fabs(TempTotals.pctError) > fabs(maxTempError))
+        {
+            maxTempError = TempTotals.pctError;
+        }
+
+        // --- convert totals to reporting units (lbs, kg, or Log(Count))
+        cf = LperFT3;
+            cf = cf * UCF(MASS);
+            TempTotals.dwInflow *= cf;
+            TempTotals.wwInflow *= cf;
+            TempTotals.gwInflow *= cf;
+            TempTotals.iiInflow *= cf;
+            TempTotals.exInflow *= cf;
+            TempTotals.flooding *= cf;
+            TempTotals.outflow *= cf;
+            TempTotals.reacted *= cf;
+            TempTotals.seepLoss *= cf;
+            TempTotals.initStorage *= cf;
+            TempTotals.finalStorage *= cf;
+    }
+    TempError = maxTempError;
+    return maxTempError;
+}
+/* END modification by Alejandro Figueroa | EAWAG */
+//=============================================================================
+
+
 double massbal_getStepFlowError()
 //
 //  Input:   none
@@ -1044,3 +1258,31 @@ double massbal_getStoredMass(int p)
     }
     return storedMass;
 }
+
+
+//=============================================================================
+
+/* START modification by Alejandro Figueroa | EAWAG */
+double tempbal_getStoredMass()
+//
+//  Input:   
+//  Output:  returns mass of temperature.
+//  Purpose: computes mass of temperature stored in conveyance network.
+//
+{
+    int j;
+    double storedMass = 0.0;
+
+    // --- get mass stored in nodes
+    for (j = 0; j < Nobjects[NODE]; j++)
+        storedMass += Node[j].newVolume * Node[j].newTemp;
+
+    // --- get mass stored in links (except for Steady Flow routing)
+    if (RouteModel != SF)
+    {
+        for (j = 0; j < Nobjects[LINK]; j++)
+            storedMass += Link[j].newVolume * Link[j].newTemp;
+    }
+    return storedMass;
+}
+/* END modification by Alejandro Figueroa | EAWAG */

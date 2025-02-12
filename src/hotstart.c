@@ -247,6 +247,14 @@ void  saveRouting()
             x[0] = (float)Node[i].newQual[j];
             fwrite(&x[0], sizeof(float), 1, Fhotstart2.file);
         }
+		
+		/* START modification by Alejandro Figueroa | EAWAG */        
+        if (TempModel.active == 1)
+        {
+            x[0] = (float)Node[i].newTemp;
+            fwrite(&x[0], sizeof(float), 1, Fhotstart2.file);
+        }
+		/* END modification by Alejandro Figueroa | EAWAG */
     }
     for (i = 0; i < Nobjects[LINK]; i++)
     {
@@ -259,6 +267,13 @@ void  saveRouting()
             x[0] = (float)Link[i].newQual[j];
             fwrite(&x[0], sizeof(float), 1, Fhotstart2.file);
         }
+		/* START modification by Alejandro Figueroa | EAWAG */ 
+		if (TempModel.active == 1)
+        {
+            x[0] = (float)Link[i].newTemp;
+            fwrite(&x[0], sizeof(float), 1, Fhotstart2.file);
+        }
+		/* END modification by Alejandro Figueroa | EAWAG */
     }
 }
 
@@ -316,6 +331,14 @@ void readRouting()
             if ( !readFloat(&x, f) ) return;
             Node[i].newQual[j] = x;
         }
+		
+		/* START modification by Alejandro Figueroa | EAWAG */
+        if (TempModel.active == 1)
+        {
+            if (!readFloat(&x, f)) return;
+            Node[i].newTemp = x;
+        }
+        /* END modification by Alejandro Figueroa | EAWAG */
 
         // --- read in zeros here for backwards compatibility
         if ( fileVersion <= 2 )
@@ -347,6 +370,14 @@ void readRouting()
             if ( !readFloat(&x, f) ) return;
             Link[i].newQual[j] = x;
         }
+		
+		/* START modification by Alejandro Figueroa | EAWAG */
+        if (TempModel.active == 1)
+        {
+            if (!readFloat(&x, f)) return;
+            Link[i].newTemp = x;
+        }
+        /* END modification by Alejandro Figueroa | EAWAG */
 
     }
 }

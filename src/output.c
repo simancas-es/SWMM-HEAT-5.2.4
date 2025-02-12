@@ -146,12 +146,13 @@ int output_open()
 
     // --- node results consist of Depth, Head, Volume, Lateral Inflow,
     //     Total Inflow, Overflow and Quality
-    NumNodeVars = MAX_NODE_RESULTS - 1 + NumPolluts;
+	/* START modification by Alejandro Figueroa | EAWAG */
+    NumNodeVars = MAX_NODE_RESULTS - 2 + NumPolluts + TempModel.active;
 
     // --- link results consist of Depth, Flow, Velocity, Volume,
     //     Capacity and Quality
-    NumLinkVars = MAX_LINK_RESULTS - 1 + NumPolluts;
-
+    NumLinkVars = MAX_LINK_RESULTS - 2 + NumPolluts + TempModel.active;;
+	/* END modification by Alejandro Figueroa | EAWAG */
     // --- get number of objects reported on
     NumSubcatch = 0;
     NumNodes = 0;
@@ -203,6 +204,10 @@ int output_open()
     fwrite(&k, sizeof(INT4), 1, Fout.file);   // # links
     k = NumPolluts;
     fwrite(&k, sizeof(INT4), 1, Fout.file);   // # pollutants
+	/* START modification by Alejandro Figueroa | EAWAG */
+    k = TempModel.active;
+    fwrite(&k, sizeof(INT4), 1, Fout.file);   // # WTemperature
+    /* END modification by Alejandro Figueroa | EAWAG */
 
     // --- save ID names of subcatchments, nodes, links, & pollutants 
     IDStartPos = ftell(Fout.file);
@@ -226,7 +231,11 @@ int output_open()
         k = Pollut[j].units;
         fwrite(&k, sizeof(INT4), 1, Fout.file);
     }
-
+	
+	/* START modification by Alejandro Figueroa | EAWAG */
+    if (TempModel.active == 1) output_saveID(WTemperature.ID, Fout.file);
+    /* END modification by Alejandro Figueroa | EAWAG */
+	
     InputStartPos = ftell(Fout.file);
 
     // --- save subcatchment area
@@ -351,6 +360,14 @@ int output_open()
         k = NODE_QUAL + j;
         fwrite(&k, sizeof(INT4), 1, Fout.file);
     }
+	
+	/* START modification by Alejandro Figueroa | EAWAG */
+    if (TempModel.active == 1)
+    {
+        k = NODE_WTEMP;
+        fwrite(&k, sizeof(INT4), 1, Fout.file);
+    }
+    /* END modification by Alejandro Figueroa | EAWAG */
 
     // --- save number & codes of link result variables
     k = NumLinkVars;
@@ -370,6 +387,14 @@ int output_open()
         k = LINK_QUAL + j;
         fwrite(&k, sizeof(INT4), 1, Fout.file);
     }
+	
+	/* START modification by Alejandro Figueroa | EAWAG */
+    if (TempModel.active == 1)
+    {
+        k = LINK_WTEMP;
+        fwrite(&k, sizeof(INT4), 1, Fout.file);
+    }
+    /* END modification by Alejandro Figueroa | EAWAG */
 
     // --- save number & codes of system result variables
     k = MAX_SYS_RESULTS;

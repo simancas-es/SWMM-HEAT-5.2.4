@@ -1598,6 +1598,22 @@ void  lid_addDrainInflow(int j, double f)
                     Node[k].newQual[p] += w;
                     massbal_addInflowQual(WET_WEATHER_INFLOW, p, w);
                 }
+				
+				/* START modification by Alejandro Figueroa | EAWAG */
+                //... add temperature load, based on parent subcatchment temperature 
+                if (TempModel.active == 1)
+                {
+                    //... get previous & current drain loads
+                    w1 = lidUnit->oldDrainFlow * Subcatch[j].oldTemp;
+                    w2 = lidUnit->newDrainFlow * Subcatch[j].newTemp;
+
+                    //... add interpolated load to node's wet weather loading
+                    w = (1.0 - f) * w1 + f * w2;
+                    w = w * (1.0 - LidProcs[i].drainRmvlTemp);                 
+                    Node[k].newTemp += w;
+                    massbal_addInflowTemp(WET_WEATHER_INFLOW, w);
+                }
+                /* END modification by Alejandro Figueroa | EAWAG */
             }
             lidList = lidList->nextLidUnit;
         }

@@ -73,6 +73,9 @@ void    writeFlowClass(void);
 void    writeLinkSurcharge(void);
 void    writePumpFlows(void);
 void    writeLinkLoads(void);
+/* START modification by Alejandro Figueroa | EAWAG */
+void    writeLinkLoadsT(void);
+/* END modification by Alejandro Figueroa | EAWAG */
 
 #define WRITE(x) (report_writeLine((x)))
 
@@ -125,6 +128,9 @@ void statsrpt_writeReport()
         writeLinkSurcharge();
         writePumpFlows();
         if ( Nobjects[POLLUT] > 0 && !IgnoreQuality) writeLinkLoads();
+        /* START modification by Alejandro Figueroa | EAWAG */
+        if ( TempModel.active == 1 && !IgnoreWTemperature) writeLinkLoadsT();       
+        /* END modification by Alejandro Figueroa | EAWAG */
     }
 }
 
@@ -585,12 +591,18 @@ void writeOutfallLoads()
     double  outfallCount, flowCount;
     double  flowSum, freqSum, volSum;
     double* totals;
+    /* START modification by Alejandro Figueroa | EAWAG */    
+    double  totalst;
+    /* END modification by Alejandro Figueroa | EAWAG */
 
     if ( Nnodes[OUTFALL] > 0 )
     {
         // --- initial totals
         totals = (double *) calloc(Nobjects[POLLUT], sizeof(double));
         for (p=0; p<Nobjects[POLLUT]; p++) totals[p] = 0.0;
+        /* START modification by Alejandro Figueroa | EAWAG */
+        totalst = 0.0;
+        /* END modification by Alejandro Figueroa | EAWAG */
         flowSum = 0.0;
         freqSum = 0.0;
         volSum  = 0.0;
@@ -606,12 +618,21 @@ void writeOutfallLoads()
         fprintf(Frpt.file,
  "\n  -----------------------------------------------------------"); 
         for (p = 0; p < Nobjects[POLLUT]; p++) fprintf(Frpt.file, "--------------");
+        /* START modification by Alejandro Figueroa | EAWAG */
+        if(TempModel.active == 1) fprintf(Frpt.file, "--------------"),
+            /* START modification by Alejandro Figueroa | EAWAG */                
         fprintf(Frpt.file,
  "\n                         Flow       Avg       Max       Total");
         for (p=0; p<Nobjects[POLLUT]; p++) fprintf(Frpt.file,"         Total");
+        /* START modification by Alejandro Figueroa | EAWAG */
+        if (TempModel.active == 1) fprintf(Frpt.file, "         Total");
+        /* END modification by Alejandro Figueroa | EAWAG */
         fprintf(Frpt.file,
  "\n                         Freq      Flow      Flow      Volume");
         for (p = 0; p < Nobjects[POLLUT]; p++) fprintf(Frpt.file, "%14s", Pollut[p].ID);
+        /* START modification by Alejandro Figueroa | EAWAG */
+        if (TempModel.active == 1) fprintf(Frpt.file, "%14s", WTemperature.ID);
+        /* END modification by Alejandro Figueroa | EAWAG */
         fprintf(Frpt.file,
  "\n  Outfall Node           Pcnt       %3s       %3s    %8s",
             FlowUnitWords[FlowUnits], FlowUnitWords[FlowUnits],
@@ -623,9 +644,20 @@ void writeOutfallLoads()
             sstrncpy(units, LoadUnitsWords[i], 14);
             fprintf(Frpt.file, "%14s", units);
         }
+        /* START modification by Alejandro Figueroa | EAWAG */
+        if (TempModel.active == 1)
+        {
+            i = UnitSystem;
+            strcpy(units, LoadUnitsWords[i]);
+            fprintf(Frpt.file, "%14s", units);
+        }
+        /* END modification by Alejandro Figueroa | EAWAG */
         fprintf(Frpt.file,
  "\n  -----------------------------------------------------------");
         for (p = 0; p < Nobjects[POLLUT]; p++) fprintf(Frpt.file, "--------------");
+        /* START modification by Alejandro Figueroa | EAWAG */
+        if (TempModel.active == 1) fprintf(Frpt.file, "--------------");
+        /* END modification by Alejandro Figueroa | EAWAG */
 
         // --- identify each outfall node
         for (j=0; j<Nobjects[NODE]; j++)
@@ -660,6 +692,15 @@ void writeOutfallLoads()
                 if ( Pollut[p].units == COUNT ) x = LOG10(x);
                 fprintf(Frpt.file, "%14.3f", x); 
             }
+            /* START modification by Alejandro Figueroa | EAWAG */
+            // --- print load of each temperature for outfall
+            if (TempModel.active == 1)
+            {
+                x = OutfallStats[k].totalLoadT * LperFT3 * WTemperature.mcf;
+                totalst += x;
+                fprintf(Frpt.file, "%14.3f", x);
+            }
+            /* END modification by Alejandro Figueroa | EAWAG */
         }
 
         // --- print total outfall loads
@@ -680,6 +721,12 @@ void writeOutfallLoads()
             x = totals[p];
             if ( Pollut[p].units == COUNT ) x = LOG10(x);
             fprintf(Frpt.file, "%14.3f", x); 
+        }
+        /* START modification by Alejandro Figueroa | EAWAG */
+        if (TempModel.active == 1)
+        {
+            x = totalst;
+            fprintf(Frpt.file, "%14.3f", x);
         }
         WRITE("");
         free(totals);
@@ -956,3 +1003,52 @@ void writeLinkLoads()
     }
     WRITE("");
 }
+/* START modification by Alejandro Figueroa | EAWAG */
+//=============================================================================
+
+void writeLinkLoadsT()
+{
+    int i, j;
+    double x;
+    char  units[15];
+    char  linkLine[] = "--------------------";
+    char  pollutLine[] = "--------------";
+
+    // --- print the table headings 
+    WRITE("");
+    WRITE("***************************");
+    WRITE("Link Temperature Load Summary");
+    WRITE("***************************");
+    WRITE("");
+    fprintf(Frpt.file, "\n  %s", linkLine);
+    fprintf(Frpt.file, "%s", pollutLine);
+    fprintf(Frpt.file, "\n                      ");
+    fprintf(Frpt.file, "%14s", WTemperature.ID);
+    fprintf(Frpt.file, "\n  Link                ");
+    //for (p = 0; p < Nobjects[POLLUT]; p++)
+    {
+        i = UnitSystem;
+        //if (Pollut[p].units == COUNT) i = 2;
+        strcpy(units, LoadUnitsWords[i]);
+        fprintf(Frpt.file, "%14s", units);
+    }
+    fprintf(Frpt.file, "\n  %s", linkLine);
+    fprintf(Frpt.file, "%s", pollutLine);
+
+    // --- print the pollutant loadings carried by each link
+    for (j = 0; j < Nobjects[LINK]; j++)
+    {
+        fprintf(Frpt.file, "\n  %-20s", Link[j].ID);
+       // for (p = 0; p < Nobjects[POLLUT]; p++)
+        {
+            x = Link[j].totalLoadT * LperFT3 * WTemperature.mcf;
+           // if (Temperature.units == COUNT) x = LOG10(x);
+            if (x < 10000.) fprintf(Frpt.file, "%14.3f", x);
+            else fprintf(Frpt.file, "%14.3e", x);
+        }
+    }
+    WRITE("");
+}        
+/* END modification by Alejandro Figueroa | EAWAG */
+
+

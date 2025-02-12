@@ -70,6 +70,26 @@ void inputrpt_writeInput()
                     Pollut[Pollut[i].coPollut].ID, Pollut[i].coFraction);
         }
     }
+	
+	/* START modification by Alejandro Figueroa | EAWAG */
+    if (TempModel.active == 1)
+    {
+        WRITE("");
+        WRITE("");
+        WRITE("*****************");
+        WRITE("Water Temperature Summary");
+        WRITE("*****************");
+        fprintf(Frpt.file,
+            "\n                               Ppt.      GW         Kdecay");
+        fprintf(Frpt.file,
+            "\n  Name                 Units   Temp.   Temp.    1/days    ");
+        fprintf(Frpt.file,
+            "\n  -----------------------------------------------------------------------");
+            fprintf(Frpt.file, "\n  %-20s %5s%10.2f%10.2f%10.2f", WTemperature.ID,
+                QualUnitsWords[WTemperature.units], WTemperature.pptTemp,
+                WTemperature.gwTemp, WTemperature.kDecay * SECperDAY);
+    }
+    /* END modification by Alejandro Figueroa | EAWAG */
 
     if ( Nobjects[LANDUSE] > 0 )
     {

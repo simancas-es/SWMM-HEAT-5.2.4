@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "headers.h"
+#include "funcs.h"
 
 //-----------------------------------------------------------------------------
 //  Constants
@@ -495,6 +496,11 @@ void initLinks(int routingModel)
             // --- find areas based on initial flow depth
             Conduit[k].a1 = xsect_getAofY(&Link[i].xsect, Link[i].newDepth);
             Conduit[k].a2 = Conduit[k].a1;
+			/* START modification by Alejandro Figueroa | Eawag */
+            Conduit[k].wetp = Conduit[k].a1/ getHydRad(&Link[i].xsect, Conduit[k].a1);
+            Conduit[k].width = getWidth(&Link[i].xsect, Link[i].newDepth);
+            Conduit[k].velocity = Conduit[k].q1 / Conduit[k].a1;
+            /* END modification by Alejandro Figueroa | Eawag */
 
             // --- compute initial volume from area
             {

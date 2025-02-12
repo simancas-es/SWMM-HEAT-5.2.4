@@ -28,8 +28,12 @@ extern double Qcf[];                   // flow units conversion factors
 //-----------------------------------------------------------------------------                  
 static int      IfaceFlowUnits;        // flow units for routing interface file
 static int      IfaceStep;             // interface file time step (sec)
+/* START modification by Alejandro Figueroa | EAWAG */
 static int      NumIfacePolluts;       // number of pollutants in interface file
+static int      NumIfaceTemperature;   // temperature in interface file
 static int*     IfacePolluts;          // indexes of interface file pollutants
+static int      IfaceTemperature;      // indexes of interface file temperature
+/* END modification by Alejandro Figueroa | EAWAG */
 static int      NumIfaceNodes;         // number of nodes on interface file
 static int*     IfaceNodes;            // indexes of nodes on interface file
 static double** OldIfaceValues;        // interface flows & WQ at previous time
@@ -145,6 +149,10 @@ void iface_openRoutingFiles()
     // --- initialize shared variables
     NumIfacePolluts = 0;
     IfacePolluts = NULL;
+	/* START modification by Alejandro Figueroa | EAWAG */
+    NumIfaceTemperature = 0;
+    IfaceTemperature = 0;
+    /* END modification by Alejandro Figueroa | EAWAG */
     NumIfaceNodes = 0;
     IfaceNodes = NULL;
     OldIfaceValues = NULL;
@@ -276,6 +284,37 @@ double iface_getIfaceQual(int index, int pollut)
     else return 0.0;
 }
 
+/* START modification by Alejandro Figueroa | EAWAG */
+
+//=============================================================================
+
+double iface_getIfaceTemp(int index, int npollut)
+//
+//  Input:   index = index of node on interface file
+//           npollut = number of pollutants on interface file
+//  Output:  returns inflow temperature
+//  Purpose: finds interface temperature for particular node index.
+//
+{
+    int    j;
+    double c1, c2;
+
+    if (index >= 0 && index < NumIfaceNodes)
+    {
+        // --- find index of pollut on interface file
+        j = IfaceTemperature;
+        if (j < 0) return 0.0;
+
+        // --- interpolate flow between old and new values
+        //     (remember that 1st col. of values matrix is for flow)
+        c1 = OldIfaceValues[index][j + 1 + npollut];
+        c2 = NewIfaceValues[index][j + 1 + npollut];
+        return (1.0 - IfaceFrac) * c1 + IfaceFrac * c2;
+    }
+    else return 0.0;
+}
+/* END modification by Alejandro Figueroa | EAWAG */
+
 //=============================================================================
 
 void iface_saveOutletResults(DateTime reportDate, FILE* file)
@@ -305,6 +344,13 @@ void iface_saveOutletResults(DateTime reportDate, FILE* file)
         {
             fprintf(file, " %-10f", Node[i].newQual[p]);
         }
+		
+		 /* START modification by Alejandro Figueroa | EAWAG */
+        if(TempModel.active == 1)
+        {
+            fprintf(file, " %-10f", Node[i].newTemp);
+        }
+        /* END modification by Alejandro Figueroa | EAWAG */
     }
 }
 
@@ -334,13 +380,22 @@ void openFileForOutput()
 
     // --- write number & names of each constituent (including flow) to file
     fprintf(Foutflows.file, "\n%-4d - number of constituents as listed below:",
-            Nobjects[POLLUT] + 1);
+	/* START modification by Alejandro Figueroa | EAWAG */
+            Nobjects[POLLUT] + 1 + TempModel.active);
+	/* END modification by Alejandro Figueroa | EAWAG */
     fprintf(Foutflows.file, "\nFLOW %s", FlowUnitWords[FlowUnits]);
     for (i=0; i<Nobjects[POLLUT]; i++)
     {
         fprintf(Foutflows.file, "\n%s %s", Pollut[i].ID,
             QualUnitsWords[Pollut[i].units]);
     }
+	/* START modification by Alejandro Figueroa | EAWAG */
+	if (TempModel.active == 1)
+    {
+        fprintf(Foutflows.file, "\n%s %s", WTemperature.ID,
+            TempUnitsWords[WTemperature.units]);
+    }
+    /* END modification by Alejandro Figueroa | EAWAG */
 
     // --- count number of outlet nodes
     n = 0;
@@ -364,6 +419,13 @@ void openFileForOutput()
     {
         fprintf(Foutflows.file, " %-10s", Pollut[i].ID);
     }
+	
+	/* START modification by Alejandro Figueroa | EAWAG */
+    if (TempModel.active == 1)
+    {
+        fprintf(Foutflows.file, " %-10s", WTemperature.ID);
+    }
+    /* END modification by Alejandro Figueroa | EAWAG */
 
     // --- if reporting starts immediately, save initial outlet values
     if ( ReportStart == StartDateTime )
@@ -502,6 +564,27 @@ int  getIfaceFilePolluts()
             IfacePolluts[j] = i;
         }
     }
+	
+	/* START modification by Alejandro Figueroa | EAWAG */ 
+    // --- allocate memory for temperature index array
+    if (TempModel.active == 1)
+    {
+        IfaceTemperature = -1;
+    }
+    // --- read temperature name & unit
+    if (TempModel.active == 1)
+    {
+        // --- check temperature name on file with project's temperature
+		if (feof(Finflows.file)) return ERR_ROUTING_FILE_FORMAT;
+		fgets(line, MAXLINE, Finflows.file);
+		sscanf(line, "%s %s", s1, s2);
+			j = project_findObject(WTEMPERATURE, s1);
+			if (!strcomp(s2, TempUnitsWords[WTemperature.units]))
+				return ERR_ROUTING_FILE_NOMATCH;
+			IfaceTemperature = 0;
+    }
+    /* END modification by Alejandro Figueroa | EAWAG */
+	
     return 0;
 }
 
@@ -600,6 +683,16 @@ void readNewIfaceValues()
             if ( s == NULL ) return;
             NewIfaceValues[i][j] = atof(s);
         }
+		
+		/* START modification by Alejandro Figueroa | EAWAG */
+        // --- parse temperature values
+        if (TempModel.active == 1)
+        {
+            s = strtok(NULL, SEPSTR);
+            if (s == NULL) return;
+            NewIfaceValues[i][NumIfacePolluts+1] = atof(s);
+        }
+        /* END modification by Alejandro Figueroa | EAWAG */
 
     }
 
@@ -619,9 +712,12 @@ void setOldIfaceValues()
 {
     int i, j;
     OldIfaceDate = NewIfaceDate;
+	
     for ( i=0; i<NumIfaceNodes; i++)
     {
-        for ( j=0; j<NumIfacePolluts+1; j++ )
+		/* START Mod SWMM-HEAT */
+        for ( j=0; j<NumIfacePolluts+1+TempModel.active; j++ )
+		/* END Mod SWMM-HEAT */	
         {
             OldIfaceValues[i][j] = NewIfaceValues[i][j];
         }

@@ -69,6 +69,13 @@ int inflow_readExtInflow(char* tok[], int ntoks)
     if ( param < 0 )
     {
         if ( match(tok[1], w_FLOW) ) param = -1;
+		/* START modification by Alejandro Figueroa | EAWAG */
+		else if(match(tok[1], w_WTEMPERATURE))
+		{
+			param = project_findObject(WTEMPERATURE, tok[1]);
+            if (param > -1) param = -10;
+		}
+		/* END modification by Alejandro Figueroa | EAWAG */
         else return error_setInpError(ERR_NAME, tok[1]);
     }
 
@@ -102,6 +109,15 @@ int inflow_readExtInflow(char* tok[], int ntoks)
             if ( cf <= 0.0 ) return error_setInpError(ERR_NUMBER, tok[4]);
         }
     }
+	
+	/* START modification by Alejandro Figueroa | EAWAG */
+	// --- do the same for a temperature inflow
+    if (ntoks >= 4 && param == -10)
+    {
+        if (match(tok[3], w_WTEMPERATURE)) type = WTEMPERATURE_INFLOW;
+        else    return error_setInpError(ERR_KEYWORD, tok[3]);
+    }
+    /* END modification by Alejandro Figueroa | EAWAG */
 
     // --- get sf and baseline values
     if ( ntoks >= 6 )
@@ -138,9 +154,11 @@ int inflow_readExtInflow(char* tok[], int ntoks)
 int inflow_setExtInflow(int j, int param, int type, int tseries, int basePat,
                         double cf, double baseline, double sf)
 // Purpose:  This function assigns property values to the inflow object 
-// Inputs:   j = Node index
-//           param = FLOW (-1) or pollutant index
-//           type = FLOW, CONCEN or MASS inflow
+// Inputs:   j = Node index    
+/* START modification by Alejandro Figueroa | EAWAG */
+//           param = FLOW (-1), pollutant index or TEMPERATURE(-10)
+//           type = FLOW, CONCEN, MASS or WTEMPERATURE inflow
+/* END modification by Alejandro Figueroa | EAWAG */
 //           tSeries = time series index
 //           basePat = baseline pattern
 //           cf = units conversion factor
@@ -263,6 +281,13 @@ int inflow_readDwfInflow(char* tok[], int ntoks)
     if ( k < 0 )
     {
         if ( match(tok[1], w_FLOW) ) k = -1;
+		/* START modification by Alejandro Figueroa | EAWAG */
+		else if (match(tok[1], w_WTEMPERATURE))
+        {
+            k = project_findObject(WTEMPERATURE, tok[1]);
+            if (k > -1) k = -10;
+        }
+		/* END modification by Alejandro Figueroa | EAWAG */
         else return error_setInpError(ERR_NAME, tok[1]);
     }
 

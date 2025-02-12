@@ -84,6 +84,9 @@ void    report_writeLoadingError(TLoadingTotals* totals);
 void    report_writeGwaterError(TGwaterTotals* totals, double area);
 void    report_writeFlowError(TRoutingTotals* totals);
 void    report_writeQualError(TRoutingTotals* totals);
+/* START modification by Alejandro Figueroa | EAWAG */
+void    report_writeTempError(TRoutingTotals totals);
+/* END modification by Alejandro Figueroa | EAWAG */
 
 void    report_writeMaxStats(TMaxStats massBalErrs[], TMaxStats CourantCrit[],
         int nMaxStats);
@@ -202,6 +205,9 @@ void    rdii_getRdiiFlow(int index, int* node, double* q);
 //-----------------------------------------------------------------------------
 int     landuse_readParams(int landuse, char* tok[], int ntoks);
 int     landuse_readPollutParams(int pollut, char* tok[], int ntoks);
+/* START modification by Alejandro Figueroa | EAWAG */
+int     landuse_readTempParams(char* tok[], int ntoks);
+/* END modification by Alejandro Figueroa | EAWAG */
 int     landuse_readBuildupParams(char* tok[], int ntoks);
 int     landuse_readWashoffParams(char* tok[], int ntoks);
 
@@ -235,6 +241,10 @@ void    dwflow_findConduitFlow(int j, int steps, double omega, double dt);
 
 void    qualrout_init(void);
 void    qualrout_execute(double tStep);
+/* START modification by Alejandro Figueroa | EAWAG */
+void    temprout_execute(double tStep);
+void    temprout_init(void);
+/* END modification by Alejandro Figueroa | EAWAG */
 
 //-----------------------------------------------------------------------------
 //   Treatment Methods
@@ -263,13 +273,19 @@ void    massbal_updateRoutingTotals(double tStep);
 void    massbal_initTimeStepTotals(void);
 void    massbal_addInflowFlow(int type, double q);
 void    massbal_addInflowQual(int type, int pollut, double w);
+/* START modification by Alejandro Figueroa | EAWAG */
+void    massbal_addInflowTemp(int type, double w);
 void    massbal_addOutflowFlow(double q, int isFlooded);
 void    massbal_addOutflowQual(int pollut, double mass, int isFlooded);
+void    massbal_addOutflowTemp(double mass, int isFlooded);
 void    massbal_addNodeLosses(double evapLoss, double infilLoss);
 void    massbal_addLinkLosses(double evapLoss, double infilLoss);
 void    massbal_addReactedMass(int pollut, double mass);
 void    massbal_addSeepageLoss(int pollut, double seepLoss);
+void    massbal_addSeepageLossT(double seepLoss);
 void    massbal_addToFinalStorage(int pollut, double mass);
+void    massbal_addToFinalStorageT(double mass);
+/* END modification by Alejandro Figueroa | EAWAG */
 double  massbal_getStepFlowError(void);
 double  massbal_getRunoffError(void);
 double  massbal_getFlowError(void);
@@ -340,6 +356,9 @@ void    surfqual_getWashoff(int subcatch, double runoff, double tStep);
 void    surfqual_getBuildup(int subcatch, double tStep);
 void    surfqual_sweepBuildup(int subcatch, DateTime aDate);
 double  surfqual_getWtdWashoff(int subcatch, int pollut, double wt);
+/* START modification by Alejandro Figueroa | EAWAG */
+double  surftemp_getWtdWashoff(int subcatch, double wt);
+/* END modification by Alejandro Figueroa | EAWAG */
 
 //-----------------------------------------------------------------------------
 //   Conveyance System Node Methods
@@ -351,6 +370,9 @@ void    node_initState(int node);
 void    node_initFlows(int node, double tStep);
 void    node_setOldHydState(int node);
 void    node_setOldQualState(int node);
+/* START modification by Alejandro Figueroa | EAWAG */
+void    node_setOldTempState(int node);
+/* END modification by Alejandro Figueroa | EAWAG */
 void    node_setOutletDepth(int node, double yNorm, double yCrit, double z);
 
 double  node_getSurfArea(int node, double depth);
@@ -378,6 +400,7 @@ void    inflow_initDwfPattern(int pattern);
 
 double  inflow_getExtInflow(TExtInflow* inflow, DateTime aDate);
 double  inflow_getDwfInflow(TDwfInflow* inflow, int m, int d, int h);
+double  getPatternFactor(int p, int month, int day, int hour);
 
 void    inflow_deleteExtInflows(int node);
 void    inflow_deleteDwfInflows(int node);
@@ -392,6 +415,9 @@ int     iface_getNumIfaceNodes(DateTime aDate);
 int     iface_getIfaceNode(int index);
 double  iface_getIfaceFlow(int index);
 double  iface_getIfaceQual(int index, int pollut);
+/* START modification by Alejandro Figueroa | EAWAG */
+double  iface_getIfaceTemp(int index, int npollut);
+/* END modification by Alejandro Figueroa | EAWAG */
 void    iface_saveOutletResults(DateTime reportDate, FILE* file);
 
 //-----------------------------------------------------------------------------
@@ -411,6 +437,9 @@ void    link_validate(int link);
 void    link_initState(int link);
 void    link_setOldHydState(int link);
 void    link_setOldQualState(int link);
+/* START modification by Alejandro Figueroa | EAWAG */
+void    link_setOldTempState(int link);
+/* END modification by Alejandro Figueroa | EAWAG */
 
 void    link_setTargetSetting(int j);
 void    link_setSetting(int j, double tstep);
@@ -448,6 +477,10 @@ double  xsect_getAofY(TXsect* xsect, double y);
 double  xsect_getRofY(TXsect* xsect, double y);
 double  xsect_getWofY(TXsect* xsect, double y);
 double  xsect_getYcrit(TXsect* xsect, double q);
+/* START modification by Alejandro Figueroa | EAWAG */
+double getWidth(TXsect* xsect, double y);                 
+double getHydRad(TXsect* xsect, double y);
+/* END modification by Alejandro Figueroa | EAWAG */
 
 //-----------------------------------------------------------------------------
 //   Culvert/Roadway Methods

@@ -260,6 +260,14 @@ int  stats_open()
                     OutfallStats[j].totalLoad[k] = 0.0;
             }
             else OutfallStats[j].totalLoad = NULL;
+			
+			/* START modification by Alejandro Figueroa | EAWAG */
+            if (TempModel.active == 1)
+            {
+                OutfallStats[j].totalLoadT = 0.0;
+            }
+            else OutfallStats[j].totalLoadT = 0.0;
+            /* END modification by Alejandro Figueroa | EAWAG */
         }
     }
 
@@ -620,6 +628,13 @@ void stats_updateNodeStats(int j, double tStep, DateTime aDate)
             OutfallStats[k].totalLoad[p] += 
                 Node[j].inflow * Node[j].newQual[p] * tStep;
         }
+		/* START modification by Alejandro Figueroa | EAWAG */
+        if (TempModel.active == 1)
+        {
+            OutfallStats[k].totalLoadT += Node[j].inflow *
+                Node[j].newTemp * tStep;
+        }
+          /* END modification by Alejandro Figueroa | EAWAG */
         SysOutfallFlow += Node[j].inflow;
     }
 
