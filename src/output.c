@@ -382,6 +382,10 @@ int output_open()
     fwrite(&k, sizeof(INT4), 1, Fout.file);
     k = LINK_CAPACITY;
     fwrite(&k, sizeof(INT4), 1, Fout.file);
+    //SWMM-HEAT
+    k = LINK_AIR_VELOCITY;
+    fwrite(&k, sizeof(INT4), 1, Fout.file);
+    //SWMM-HEAT
     for (j=0; j<NumPolluts; j++)
     {
         k = LINK_QUAL + j;
