@@ -267,6 +267,13 @@ void project_validate()
     if ( NumThreads == 0 ) NumThreads = omp_get_max_threads();
     else NumThreads = MIN(NumThreads, omp_get_max_threads());
     if ( Nobjects[LINK] < 4 * NumThreads ) NumThreads = 1;
+
+    // --- SWMM-HEAT Check that the temperature model has a WTEMPERATURE object
+    if (TempModel.active == 1) {
+        if (WTemperature.ID ==  NULL){
+        report_writeErrorMsg(ERR_MISSING_WTEMPERATURE,"");
+}
+    }
 }
 
 //=============================================================================

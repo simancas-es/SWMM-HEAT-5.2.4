@@ -172,6 +172,9 @@ enum  ErrorType {
       ERR_API_PROPERTY_VALUE   = 508,
       ERR_API_TIME_PERIOD      = 509,
 
+// ... SWMM-HEAT
+      ERR_MISSING_WTEMPERATURE = 700,
+      
 // ... Additional Errors
       MAXERRMSG = 1000
 };

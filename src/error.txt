@@ -133,3 +133,6 @@ ERR(506,"\n  API Error 506: invalid object name.")
 ERR(507,"\n  API Error 507: invalid property type.")
 ERR(508,"\n  API Error 508: invalid property value.")
 ERR(509,"\n  API Error 509: invalid time period.")
+
+// SWMM-HEAT
+ERR(700,"\n ERROR 700: (SWMM-HEAT) Missing WTEMPERATURE object in [WTEMPERATURE] section while TEMP_MODEL is 1.")
