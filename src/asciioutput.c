@@ -157,8 +157,8 @@ int output_open_ascii()
 
 
     fseek(Foutasciih.file, 0, SEEK_SET);
-    fprintf(Foutasciih.file, "MAGICNUMBER, VERSION, FLOW_UNITS, NUMSUBCATCH, NUMNODES, NUMLINKS, NUMPOLLUTS\n");
-    fprintf(Foutasciih.file, "%d %d %d %d %d %d %d\n", MAGICNUMBER, VERSION, FlowUnits, NumSubcatch, NumNodes, NumLinks, \
+    fprintf(Foutasciih.file, "MAGICNUMBER, VERSION, FLOW_UNITS, NUMSUBCATCH, NUMNODES, NUMLINKS, NUMPOLLUTS, TEMPMODEL\n");
+    fprintf(Foutasciih.file, "%d %d %d %d %d %d %d %d\n", MAGICNUMBER, VERSION, FlowUnits, NumSubcatch, NumNodes, NumLinks, \
         NumPolluts, TempModel.active);
 
     // --- save ID names of subcatchments, nodes, links, & pollutants 
@@ -166,26 +166,26 @@ int output_open_ascii()
     for (j = 0; j < Nobjects[SUBCATCH]; j++)
     {
         if (Subcatch[j].rptFlag) {
-            fprintf(Foutasciih.file, "LENGHT, SUBCATCH_ID\n");
+            fprintf(Foutasciih.file, "LENGTH, SUBCATCH_ID\n");
             output_saveID_ascii(Subcatch[j].ID, Foutasciih.file);
         }
     }
     for (j = 0; j < Nobjects[NODE]; j++)
     {
         if (Node[j].rptFlag) {
-            fprintf(Foutasciih.file, "LENGHT, NODE_ID\n");
+            fprintf(Foutasciih.file, "LENGTH, NODE_ID\n");
             output_saveID_ascii(Node[j].ID, Foutasciih.file);
         }
     }
     for (j = 0; j < Nobjects[LINK]; j++)
     {
         if (Link[j].rptFlag) {
-            fprintf(Foutasciih.file, "LENGHT, LINK_ID\n");
+            fprintf(Foutasciih.file, "LENGTH, LINK_ID\n");
             output_saveID_ascii(Link[j].ID, Foutasciih.file);
         }
     }
     for (j = 0; j < NumPolluts; j++) {
-        fprintf(Foutasciih.file, "LENGHT, POLLUTANT_ID\n");
+        fprintf(Foutasciih.file, "LENGTH, POLLUTANT_ID\n");
         output_saveID_ascii(Pollut[j].ID, Foutasciih.file);
     }
 
@@ -198,7 +198,7 @@ int output_open_ascii()
 
     if (TempModel.active == 1)
     {
-        fprintf(Foutasciih.file, "LENGHT, WTEMPERATURE_ID\n");
+        fprintf(Foutasciih.file, "LENGTH, WTEMPERATURE_ID\n");
     output_saveID_ascii(WTemperature.ID, Foutasciih.file);
     fprintf(Foutasciih.file, "WTEMPERATURE_UNITS\n");
     fprintf(Foutasciih.file, "%d ", WTemperature.units);
@@ -287,8 +287,9 @@ NODE_OVERFLOW\n");
     }
     fprintf(Foutasciih.file, "\n");
     fprintf(Foutasciih.file, "NODE_WTEMP\n");
-    fprintf(Foutasciih.file, "%d ", TempModel.active + NODE_WTEMP - 1);
-
+    if (TempModel.active == 1){
+    fprintf(Foutasciih.file, "%d ", NODE_QUAL + NumPolluts);
+    }
     fprintf(Foutasciih.file, "\n");
 
     // --- save number & codes of link result variables
@@ -299,10 +300,12 @@ NODE_OVERFLOW\n");
     {
         fprintf(Foutasciih.file, "%d ", LINK_QUAL + j);
     }
+    
     fprintf(Foutasciih.file, "\n");
     fprintf(Foutasciih.file, "LINK_WTEMP\n");
-    fprintf(Foutasciih.file, "%d ", TempModel.active + LINK_WTEMP - 1);
-
+    if (TempModel.active == 1){
+    fprintf(Foutasciih.file, "%d ", LINK_QUAL + NumPolluts);
+}    
     fprintf(Foutasciih.file, "\n");
 
 
@@ -444,7 +447,7 @@ void output_end_ascii()
     //INT4 k;
     fprintf(Foutasciih.file, "ID_START_POS, INPUT_START_POS, OUTPUT_START_POS\n");
     fprintf(Foutasciih.file, "%d %d %d\n", IDStartPos, InputStartPos, OutputStartPos);
-    fprintf(Foutasciih.file, "NPERIODS, EROR_GETCODE\n");
+    fprintf(Foutasciih.file, "NPERIODS, ERROR_GETCODE\n");
     fprintf(Foutasciih.file, "%d %d\n", Nperiods, ErrorCode);
     if (fprintf(Foutasciih.file, "MAGICNUMBER %d\n", MAGICNUMBER) < 0)
     {
