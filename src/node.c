@@ -179,13 +179,13 @@ void  node_setParams(int j, int type, int k, double x[])
         Node[j].surDepth   = x[8] / UCF(LENGTH);
         Storage[k].fEvap   = x[9];
 		/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
-		Storage[k].thickness = x[9] / UCF(LENGTH);
-		Storage[k].kWall   = x[10];
-		Storage[k].kSoil   = x[11];
-		Storage[k].specHcSoil = x[12];
-		Storage[k].densitySoil = x[13];
-		Storage[k].airPat = x[14];
-		Storage[k].soilPat = x[15];
+		Storage[k].thickness = x[10] / UCF(LENGTH);
+		Storage[k].kWall   = x[11];
+		Storage[k].kSoil   = x[12];
+		Storage[k].specHcSoil = x[13];
+		Storage[k].densitySoil = x[14];
+		Storage[k].airPat = x[15];
+		Storage[k].soilPat = x[16];
 		/* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
         break;
 
@@ -706,7 +706,7 @@ int storage_readParams(int j, int k, char* tok[], int ntoks)
 {
     int    i, m, n;
 	/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
-    double x[16];
+    double x[17];
 	/* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
 	double y[3];
     double A, B;             //base semi-axis length & width for conical shape
@@ -845,20 +845,11 @@ int storage_readParams(int j, int k, char* tok[], int ntoks)
 	int startTok;
 	m = findmatch(tok[4], RelationWords);
 	if (m == FUNCTIONAL)
-		startTok = 10;
+		startTok = 11;
 	else
-		startTok = 8;
+		startTok = 9;
 	
 	// --- parse Thickness code if present
-	x[9] = 0.0;
-	if (ntoks >= startTok)
-	{
-		if (!getDouble(tok[startTok], &x[9]))
-			return error_setInpError(ERR_NUMBER, tok[startTok]);
-		n++;
-	}
-	startTok++;
-	// --- parse k_Wall code if present
 	x[10] = 0.0;
 	if (ntoks >= startTok)
 	{
@@ -867,7 +858,7 @@ int storage_readParams(int j, int k, char* tok[], int ntoks)
 		n++;
 	}
 	startTok++;
-	// --- parse k_Soil code if present
+	// --- parse k_Wall code if present
 	x[11] = 0.0;
 	if (ntoks >= startTok)
 	{
@@ -876,7 +867,7 @@ int storage_readParams(int j, int k, char* tok[], int ntoks)
 		n++;
 	}
 	startTok++;
-	// --- parse specHcSoil code if present
+	// --- parse k_Soil code if present
 	x[12] = 0.0;
 	if (ntoks >= startTok)
 	{
@@ -885,7 +876,7 @@ int storage_readParams(int j, int k, char* tok[], int ntoks)
 		n++;
 	}
 	startTok++;
-	// --- parse densitySoil code if present
+	// --- parse specHcSoil code if present
 	x[13] = 0.0;
 	if (ntoks >= startTok)
 	{
@@ -894,22 +885,31 @@ int storage_readParams(int j, int k, char* tok[], int ntoks)
 		n++;
 	}
 	startTok++;
-	// --- parse AirPattern code if present
+	// --- parse densitySoil code if present
 	x[14] = 0.0;
 	if (ntoks >= startTok)
 	{
-		x[14] = project_findObject(TIMEPATTERN, tok[startTok]);
-		if (x[14] < 0) return error_setInpError(ERR_NAME, tok[startTok]);
+		if (!getDouble(tok[startTok], &x[14]))
+			return error_setInpError(ERR_NUMBER, tok[startTok]);
 		n++;
 	}
 	startTok++;
-	// --- parse SoilPattern code if present
+	// --- parse AirPattern code if present
 	x[15] = 0.0;
-
 	if (ntoks >= startTok)
 	{
 		x[15] = project_findObject(TIMEPATTERN, tok[startTok]);
 		if (x[15] < 0) return error_setInpError(ERR_NAME, tok[startTok]);
+		n++;
+	}
+	startTok++;
+	// --- parse SoilPattern code if present
+	x[16] = 0.0;
+
+	if (ntoks >= startTok)
+	{
+		x[16] = project_findObject(TIMEPATTERN, tok[startTok]);
+		if (x[16] < 0) return error_setInpError(ERR_NAME, tok[startTok]);
 		n++;
 	}
 	/* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
