@@ -560,7 +560,7 @@ void addDryWeatherInflows(DateTime currentDate)
         q = 0.0;
         while ( inflow )
         {
-            if ( inflow->param < 0 )
+            if ( inflow->param == -1 )
             {
                 q = inflow_getDwfInflow(inflow, month, day, hour);
                 break;
@@ -642,6 +642,7 @@ void addDryWeatherInflows(DateTime currentDate)
                     Node[j].newTemp -= w;
                     massbal_addInflowTemp(DRY_WEATHER_INFLOW, -w);
                 }
+                break;
             }
             inflow = inflow->next;
         }
