@@ -921,7 +921,11 @@ double getReactedTempStNode(double oldTemp, int j, double tStep, int month, int 
 	Ews = deltaTs * wetA / Rws;
 
 	// get the the temperatur of the inflows
-	Tin = Node[j].newTemp / Node[j].inflow; //+ 273.15;
+	if (Node[j].inflow > ZERO )
+	{
+		Tin = Node[j].newTemp / Node[j].inflow;//+ 273.15;
+	}
+	 else Tin = 0;
 
 	// calculate the change in temperature over a given time step
 	//double deltaT = (volume * (oldTemp + 273.15) + Qin * Tin * tStep) / (volume + Qin * tStep);
@@ -1003,7 +1007,11 @@ double getReactedTempStNodes(double oldTemp, int j, double tStep, double airt, d
 	Ews = deltaTs * wetA / Rws;
 
 	// get the the temperatur of the inflows
-	Tin = Node[j].newTemp / Node[j].inflow; //+ 273.15;
+	if (Node[j].inflow > ZERO )
+	{
+		Tin = Node[j].newTemp / Node[j].inflow; //+ 273.15;
+	}
+	 else Tin = 0;
 
 	// calculate the change in temperature over a given time step
 	//double deltaT = (volume * (oldTemp + 273.15) + Qin * Tin * tStep) / (volume + Qin * tStep);
