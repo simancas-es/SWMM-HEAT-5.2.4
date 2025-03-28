@@ -840,14 +840,18 @@ int storage_readParams(int j, int k, char* tok[], int ntoks)
             return error_setInpError(ERR_NUMBER, tok[n]);
         n++;
     }
-	
+
+    
+    // --- read exfiltration parameters if present
+    if ( ntoks > n ) exfil_readStorageParams(k, tok, ntoks, n);
+
+	if (ntoks > (n + 3) ) {
 	/* START modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
 	int startTok;
-	m = findmatch(tok[4], RelationWords);
-	if (m == FUNCTIONAL)
-		startTok = 11;
+	if (m != TABULAR)
+		startTok = 11 + 2;
 	else
-		startTok = 9;
+		startTok = 9 + 2;
 	
 	// --- parse Thickness code if present
 	x[10] = 0.0;
@@ -900,12 +904,10 @@ int storage_readParams(int j, int k, char* tok[], int ntoks)
 	{
 		x[15] = project_findObject(TIMEPATTERN, tok[startTok]);
 		if (x[15] < 0) return error_setInpError(ERR_NAME, tok[startTok]);
-		n++;
 	}
 	startTok++;
 	// --- parse SoilPattern code if present
 	x[16] = 0.0;
-
 	if (ntoks >= startTok)
 	{
 		x[16] = project_findObject(TIMEPATTERN, tok[startTok]);
@@ -914,13 +916,11 @@ int storage_readParams(int j, int k, char* tok[], int ntoks)
 	}
 	/* END modification by Peter Schlagbauer | TUGraz; Revised by Alejandro Figueroa | Eawag */
 
-
+}
     // --- add parameters to storage unit object
     Node[j].ID = id;
     node_setParams(j, STORAGE, k, x);
 
-    // --- read exfiltration parameters if present
-    if ( ntoks > n ) return exfil_readStorageParams(k, tok, ntoks, n);
     return 0;
 }
 
