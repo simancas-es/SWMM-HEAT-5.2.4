@@ -114,7 +114,6 @@ void temprout_execute(double tStep)
 //
 {
 	int    i, j;
-	double qIn, vAvg;
 	double airt, soilt;
 
 	// get the current month of simulation
@@ -138,10 +137,6 @@ void temprout_execute(double tStep)
 	{
 		for (j = 0; j < Nobjects[NODE]; j++)
 		{
-			// --- get node inflow and average volume
-			qIn = Node[j].inflow;
-			vAvg = (Node[j].oldVolume + Node[j].newVolume) / 2.0;
-
 			// --- find new temperature at the node 
 			if (Node[j].type == STORAGE || Node[j].oldVolume > FUDGE)
 			{
@@ -154,10 +149,6 @@ void temprout_execute(double tStep)
 	{
 		for (j = 0; j < Nobjects[NODE]; j++)
 		{
-			// --- get node inflow and average volume
-			qIn = Node[j].inflow;
-			vAvg = (Node[j].oldVolume + Node[j].newVolume) / 2.0;
-
 			// --- find new temperature at the node 
 			if (Node[j].type == STORAGE || Node[j].oldVolume > FUDGE)
 			{
