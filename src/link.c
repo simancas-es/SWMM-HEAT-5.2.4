@@ -732,6 +732,7 @@ void link_getResults(int j, double f, float x[])
     u = link_getVelocity(j, q, y);
     c = 0.0;
 	
+    u_air = 0.0;
 	
 	
     if (Link[j].type == CONDUIT)
@@ -760,9 +761,11 @@ void link_getResults(int j, double f, float x[])
     v *= UCF(VOLUME);
     q *= UCF(FLOW) * (double)Link[j].direction;
     u *= UCF(LENGTH) * (double)Link[j].direction;
-	/* START modification by Alejandro Figueroa | EAWAG */
-	u_air =  0.397 * powl(width * u / dryPerim, 0.7234);
-	/* END modification by Alejandro Figueroa | EAWAG */
+
+    if (Link[j].type == CONDUIT){
+        /* START modification by Alejandro Figueroa | EAWAG */
+        u_air =  0.397 * powl(width * u / dryPerim, 0.7234);
+	    /* END modification by Alejandro Figueroa | EAWAG */}
     x[LINK_DEPTH]    = (float)y;
     x[LINK_FLOW]     = (float)q;
     x[LINK_VELOCITY] = (float)u;
