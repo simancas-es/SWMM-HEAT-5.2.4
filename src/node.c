@@ -346,9 +346,9 @@ void node_setOldTempState(int j)
 //
 {
     //int p;
-    {
+    {   
         Node[j].oldTemp = Node[j].newTemp;
-        Node[j].newTemp = 0.0;
+        Node[j].newTemp = NAN;
     }
 }
 /* END modification by Alejandro Figueroa | EAWAG */

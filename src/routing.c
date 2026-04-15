@@ -521,6 +521,7 @@ void addExternalInflows(DateTime currentDate)
             {
                 w = inflow_getExtInflow(inflow, currentDate);
                 w *= q;
+                if (isnan(Node[j].newTemp) && (!isnan(w))) {Node[j].newTemp = 0.0;}
                 Node[j].newTemp += w;
                 massbal_addInflowTemp(EXTERNAL_INFLOW, w);
             }
@@ -595,6 +596,7 @@ void addDryWeatherInflows(DateTime currentDate)
             if (WTemperature.dwfTemp > 0.0)
             {
                 w = q * WTemperature.dwfTemp;
+                if (isnan(Node[j].newTemp) && (!isnan(w))) {Node[j].newTemp = 0.0;}
                 Node[j].newTemp += w;
                 massbal_addInflowTemp(DRY_WEATHER_INFLOW, w);
             }
@@ -632,6 +634,7 @@ void addDryWeatherInflows(DateTime currentDate)
             {
 
                 w = q * inflow_getDwfInflow(inflow, month, day, hour);
+                if (isnan(Node[j].newTemp) && (!isnan(w))) {Node[j].newTemp = 0.0;}
                 Node[j].newTemp += w;
                 massbal_addInflowTemp(DRY_WEATHER_INFLOW, w);
 
@@ -693,6 +696,7 @@ void addWetWeatherInflows(double routingTime)
             if (TempModel.active == 1)
             {
                 w = surftemp_getWtdWashoff(i, f);
+                if (isnan(Node[j].newTemp) && (!isnan(w))) {Node[j].newTemp = 0.0;}
                 Node[j].newTemp += w;
                 massbal_addInflowTemp(WET_WEATHER_INFLOW, w);
             }
@@ -752,6 +756,7 @@ void addGroundwaterInflows(double routingTime)
                     if (TempModel.active == 1)
                     {
                         w = q * WTemperature.gwTemp;
+                        if (isnan(Node[j].newTemp) && (!isnan(w))) {Node[j].newTemp = 0.0;}
                         Node[j].newTemp += w;
                         massbal_addInflowTemp(GROUNDWATER_INFLOW, w);
                     }
@@ -824,6 +829,7 @@ void addRdiiInflows(DateTime currentDate)
             if (TempModel.active == 1)
             {
                 w = q * WTemperature.rdiiTemp;
+            if (isnan(Node[j].newTemp) && (!isnan(w))) {Node[j].newTemp = 0.0;}
                 Node[j].newTemp += w;
                 massbal_addInflowTemp(RDII_INFLOW, w);
             }
@@ -872,6 +878,7 @@ void addIfaceInflows(DateTime currentDate)
             if (TempModel.active == 1)
             {
                 w = q * iface_getIfaceTemp(i, Nobjects[POLLUT]);
+                if (isnan(Node[j].newTemp) && (!isnan(w))) {Node[j].newTemp = 0.0;}
                 Node[j].newTemp += w;
                 massbal_addInflowTemp(EXTERNAL_INFLOW, w);
             }
@@ -1024,7 +1031,9 @@ void removeOutflows(double tStep)
 			if (TempModel.active == 1)
             {
                 w = q * Node[i].newTemp;
+                if (!isnan(w)){
                 massbal_addOutflowTemp(w, isFlooded);
+                }
             }
 			/* END modification by Alejandro Figueroa | EAWAG */
         }
@@ -1044,7 +1053,9 @@ void removeOutflows(double tStep)
 			if (TempModel.active == 1)
             {
                 w = -q * Node[i].newTemp;
+                if (!isnan(w)){
                 massbal_addOutflowTemp(w, FALSE);
+                }
             }
 			/* END modification by Alejandro Figueroa | EAWAG */
         }

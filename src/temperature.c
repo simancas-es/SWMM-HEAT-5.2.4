@@ -73,8 +73,8 @@ void    temprout_init()
 	{
 		isWet = (Node[i].newDepth > FUDGE);
 
-				c =- NAN; // set temperature to NaN, because 0 is a valid temperatur value
-			if (isWet) c = WTemperature.initTemp;
+			c =- NAN; // set temperature to NaN, because 0 is a valid temperatur value
+			if (isWet) {c = WTemperature.initTemp;}
 			Node[i].oldTemp = c;
 			Node[i].newTemp = c;
 
@@ -182,9 +182,11 @@ double getMixedTemp(double c, double v1, double wIn, double qIn, double tStep)
 
 	// --- if no inflow then reactor temperature is unchanged
 	if (qIn <= ZERO) return c;
+	if (isnan(wIn)){ return NAN;}
 	// --- compute temperature of any inflow
 	vIn = qIn * tStep;
 	cIn = wIn * tStep / vIn;
+	
 
 	// --- mixture temperature can't exceed either original or inflow concen.
 	cMax = MAX(c, cIn);
@@ -225,6 +227,7 @@ void findLinkMassFlowT(int i, double tStep)
 			if (!isnan(Link[i].oldTemp)) // do not consider NaN values
 			{
 				w = qLink * Link[i].oldTemp;
+				if (isnan(Node[j].newTemp) && (!isnan(w))) {Node[j].newTemp = 0.0;}
 				Node[j].newTemp += w;
 
 			}
@@ -623,7 +626,7 @@ void  findStorageTemps(int j, double tStep, double airt, double soilt)
 	if (Node[j].newVolume <= ZeroVolume && qIn <= FLOW_TOL)
 	{
 		massbal_addToFinalStorageT(c2 * Node[j].newVolume);
-		c2 = 0.0;
+		c2 = NAN;
 	}
 	// --- assign new concen. to node
 	Node[j].newTemp = c2;

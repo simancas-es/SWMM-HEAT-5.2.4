@@ -627,7 +627,7 @@ void link_setOldQualState(int j)
  //
  {
         Link[j].oldTemp = Link[j].newTemp;
-        Link[j].newTemp = 0.0;
+        Link[j].newTemp = NAN;
  }
 
 //=============================================================================
