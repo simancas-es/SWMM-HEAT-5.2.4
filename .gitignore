@@ -19,3 +19,4 @@ build/CMakeFiles/3.31.5/CompilerIdC/CMakeCCompilerId.c
 *.lib
 *.sln
 *.json
+/build
