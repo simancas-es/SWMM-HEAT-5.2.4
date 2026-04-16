@@ -77,6 +77,8 @@ void    temprout_init()
 			if (isWet) {c = WTemperature.initTemp;}
 			Node[i].oldTemp = c;
 			Node[i].newTemp = c;
+			Link[i].oldTemp1 = c;
+			Link[i].oldTemp2 = c;
 
 		if (Node[i].type == STORAGE)
 		{
@@ -212,32 +214,43 @@ void findLinkMassFlowT(int i, double tStep)
 //           contributions from runoff and other external inflows from
 //           calculations made in routing_execute().
 {
-	int    j;// , p;
+	int    j;
 	double qLink, w;
+	double tempToUse;
 
-	// --- find inflow to downstream node
+	// --- find flow direction and downstream node
 	qLink = Link[i].newFlow;
+	
+	// --- identify index of downstream node and appropriate temperature
+	if (qLink >= 0.0) 
+		{
+			j = Link[i].node2;  // Normal flow direction
+			tempToUse = Link[i].oldTemp2;  // temperature at downstream end
+		}
+	else 
+		{
+			j = Link[i].node1;  // Reversed flow direction
+			tempToUse = Link[i].oldTemp1;  // temperature at upstream end (in reverse)
+			qLink = -qLink;
+		}
 
-	// --- identify index of downstream node
-	j = Link[i].node2;
-	if (qLink < 0.0) j = Link[i].node1;
-	qLink = fabs(qLink);
-
-			// --- temporarily accumulate inflow load in Node[j].newTemp
-			if (!isnan(Link[i].oldTemp)) // do not consider NaN values
+	// --- accumulate temperature mass at downstream node
+	if (!isnan(tempToUse))
+		{
+			w = qLink * tempToUse;
+			if (isnan(Node[j].newTemp) && (!isnan(w))) 
 			{
-				w = qLink * Link[i].oldTemp;
-				if (isnan(Node[j].newTemp) && (!isnan(w))) {Node[j].newTemp = 0.0;}
-				Node[j].newTemp += w;
-
+				Node[j].newTemp = 0.0;
 			}
-			else
-			{
-				w = 0.0;
-			}
-			// --- update total temperature/heat transported by link
-		Link[i].totalLoadT += w * tStep;
-	//}
+			if (!isnan(w)) {Node[j].newTemp += w;}
+		}
+	else
+		{
+			w = 0.0;
+		}
+		
+	// --- update total temperature/heat transported by link
+	Link[i].totalLoadT += w * tStep;
 }
 //=============================================================================
 
@@ -364,7 +377,22 @@ void findLinkTemp(int i, double tStep, int month, int day, int hour)
 		}
 
 				// --- assign new temperature to link
+		// --- assign new temperature to link
 		Link[i].newTemp = c2;
+		
+		// --- store temperature at both ends for next time step
+		// --- the upstream end gets the new mixed temperature
+		// --- the downstream end maintains the old temperature until flow reaches it
+		if (Link[i].newFlow >= 0.0)
+			{
+				Link[i].oldTemp1 = Node[Link[i].node1].newTemp;  // Upstream end
+				Link[i].oldTemp2 = c2;  // Downstream end (new mixed temp)
+			}
+		else
+			{
+				Link[i].oldTemp1 = c2;  // Downstream end in reverse flow
+				Link[i].oldTemp2 = Node[Link[i].node2].newTemp;  // Upstream end in reverse
+			}
 	//}
 }
 
@@ -471,6 +499,18 @@ void findLinkTemps(int i, double tStep, double airt, double soilt)
 	}
 	// --- assign new concen. to link
 	Link[i].newTemp = c2;
+	
+	// --- store temperature at both ends for next time step
+	if (Link[i].newFlow >= 0.0)
+		{
+			Link[i].oldTemp1 = Node[Link[i].node1].newTemp;  // Upstream end
+			Link[i].oldTemp2 = c2;  // Downstream end (new mixed temp)
+		}
+	else
+		{
+			Link[i].oldTemp1 = c2;  // Downstream end in reverse flow
+			Link[i].oldTemp2 = Node[Link[i].node2].newTemp;  // Upstream end in reverse
+		}
 	//}
 }
 

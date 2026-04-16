@@ -730,6 +730,8 @@ typedef struct
    double        newTemp;         // current temperature state
    double        totalLoadT;       // total heat mass loading
    /* END modification by Alejandro Figueroa | EAWAG */
+   double        oldTemp1;        // previous temperature at upstream end (node1)
+   double        oldTemp2;        // previous temperature at downstream end (node2)
    int           flowClass;       // flow classification
    double        dqdh;            // change in flow w.r.t. head (ft2/sec)
    signed char   direction;       // flow direction flag

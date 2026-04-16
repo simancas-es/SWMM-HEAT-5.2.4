@@ -553,6 +553,10 @@ void link_initState(int j)
     Link[j].newTemp = NAN;
     Link[j].totalLoadT = 0.0;
     /* END modification by Alejandro Figueroa | EAWAG */
+    
+    Link[j].oldTemp1 = NAN;
+    Link[j].oldTemp2 = NAN;
+
 }
 
 //=============================================================================
