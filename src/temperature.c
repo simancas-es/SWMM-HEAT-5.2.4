@@ -184,11 +184,21 @@ double getMixedTemp(double c, double v1, double wIn, double qIn, double tStep)
 
 	// --- if no inflow then reactor temperature is unchanged
 	if (qIn <= ZERO) return c;
-	if (isnan(wIn)){ return NAN;}
-	// --- compute temperature of any inflow
+
 	vIn = qIn * tStep;
+
+	if (isnan(wIn)) {
+		// No temperature data for inflow — preserve whatever is stored (may be NaN)
+		return c;
+	}
+
+	// --- compute temperature of any inflow
 	cIn = wIn * tStep / vIn;
-	
+
+	if (isnan(c) || v1 <= ZeroVolume) {
+		// Empty or uninitialized reactor — inflow temperature is the only source
+		return MAX(cIn, 0.0);
+	}
 
 	// --- mixture temperature can't exceed either original or inflow concen.
 	cMax = MAX(c, cIn);
@@ -220,14 +230,24 @@ void findLinkMassFlowT(int i, double tStep)
 
 	// --- find flow direction and downstream node
 	qLink = Link[i].newFlow;
-	
-	// --- identify index of downstream node and appropriate temperature
-	if (qLink >= 0.0) 
+
+	// --- identify index of downstream node and appropriate temperature.
+	// Non-conduit links (orifices, weirs, pumps, outlets) have no spatial
+	// temperature gradient: oldTemp1/2 are never updated for them in
+	// findLinkTemp(), so use oldTemp which is correctly maintained for all
+	// link types via link_setOldTempState().
+	if (Link[i].type != CONDUIT)
+		{
+			j = (qLink >= 0.0) ? Link[i].node2 : Link[i].node1;
+			tempToUse = Link[i].oldTemp;
+			if (qLink < 0.0) qLink = -qLink;
+		}
+	else if (qLink >= 0.0)
 		{
 			j = Link[i].node2;  // Normal flow direction
 			tempToUse = Link[i].oldTemp2;  // temperature at downstream end
 		}
-	else 
+	else
 		{
 			j = Link[i].node1;  // Reversed flow direction
 			tempToUse = Link[i].oldTemp1;  // temperature at upstream end (in reverse)
@@ -238,7 +258,7 @@ void findLinkMassFlowT(int i, double tStep)
 	if (!isnan(tempToUse))
 		{
 			w = qLink * tempToUse;
-			if (isnan(Node[j].newTemp) && (!isnan(w))) 
+			if (isnan(Node[j].newTemp) && (!isnan(w)))
 			{
 				Node[j].newTemp = 0.0;
 			}
@@ -265,14 +285,17 @@ void findNodeTemp(int j)
 
 	// --- if there is flow into node then  = mass inflow/node flow
 	qNode = Node[j].inflow;
-	if (qNode > ZERO )
+	if (qNode > ZERO)
 	{
-
+		if (isnan(Node[j].newTemp))
+			// Cold-start: water flows in but no upstream temperature source yet.
+			Node[j].newTemp = WTemperature.initTemp;
+		else
 			Node[j].newTemp /= qNode;
 	}
 	// set temperature to NaN, because 0 is a valid temperatur value
 	else
-		Node[j].newTemp = -NAN;
+		Node[j].newTemp = NAN;
 
 }
 
@@ -306,7 +329,8 @@ void findLinkTemp(int i, double tStep, int month, int day, int hour)
 
 	// --- link temperature is that of upstream node when
 	//     link is not a conduit or is a dummy link or retention time less than 10secs
-	if (Link[i].type != CONDUIT || Link[i].xsect.type == DUMMY || Link[i].newVolume / Link[i].newFlow < 10.0)
+	if (Link[i].type != CONDUIT || Link[i].xsect.type == DUMMY ||
+	    (Link[i].newFlow != 0.0 && Link[i].newVolume / fabs(Link[i].newFlow) < 10.0))
 	{
 		Link[i].newTemp = Node[j].newTemp;
 		return;
@@ -426,7 +450,8 @@ void findLinkTemps(int i, double tStep, double airt, double soilt)
 
 	// --- link temperature is that of upstream node when
 	//     link is not a conduit or is a dummy link or retention time less than 10secs
-	if (Link[i].type != CONDUIT || Link[i].xsect.type == DUMMY || Link[i].newVolume / Link[i].newFlow < 10.0)
+	if (Link[i].type != CONDUIT || Link[i].xsect.type == DUMMY ||
+	    (Link[i].newFlow != 0.0 && Link[i].newVolume / fabs(Link[i].newFlow) < 10.0))
 	{
 		Link[i].newTemp = Node[j].newTemp;
 		return;
@@ -598,11 +623,17 @@ void  findStorageTemp(int j, double tStep, int month, int day, int hour)
 		wIn = Node[j].newTemp;
 		c2 = getMixedTemp(c1, v1, wIn, qIn, tStep);
 
+		// Cold-start fallback: storage is wet but has no temperature source yet.
+		// Zero-area storage nodes always have newVolume==0 even when carrying flow,
+		// so also check depth to catch that case.
+		if (isnan(c2) && (Node[j].newVolume > ZeroVolume || Node[j].newDepth > FUDGE))
+			c2 = WTemperature.initTemp;
+
 		// --- set concen. to zero if remaining volume & inflow is negligible
-		if (Node[j].newVolume <= ZeroVolume && qIn <= FLOW_TOL)
+		if (Node[j].newVolume <= ZeroVolume && Node[j].newDepth <= FUDGE && qIn <= FLOW_TOL)
 		{
 			massbal_addToFinalStorageT(c2 * Node[j].newVolume);
-			c2 = 0.0;
+			c2 = NAN;
 		}
 
 		// --- assign new concen. to node
@@ -662,8 +693,14 @@ void  findStorageTemps(int j, double tStep, double airt, double soilt)
 	wIn = Node[j].newTemp;
 	c2 = getMixedTemp(c1, v1, wIn, qIn, tStep);
 
+	// Cold-start fallback: storage is wet but has no temperature source yet.
+	// Zero-area storage nodes always have newVolume==0 even when carrying flow,
+	// so also check depth to catch that case.
+	if (isnan(c2) && (Node[j].newVolume > ZeroVolume || Node[j].newDepth > FUDGE))
+		c2 = WTemperature.initTemp;
+
 	// --- set concen. to zero if remaining volume & inflow is negligible
-	if (Node[j].newVolume <= ZeroVolume && qIn <= FLOW_TOL)
+	if (Node[j].newVolume <= ZeroVolume && Node[j].newDepth <= FUDGE && qIn <= FLOW_TOL)
 	{
 		massbal_addToFinalStorageT(c2 * Node[j].newVolume);
 		c2 = NAN;

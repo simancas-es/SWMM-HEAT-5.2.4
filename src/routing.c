@@ -514,19 +514,33 @@ void addExternalInflows(DateTime currentDate)
         }
 		/* START modification by Alejandro Figueroa | EAWAG */
 		// --- get temperature inflows
-		inflow = Node[j].extInflow;
-		while (inflow)
-        {
-            if (inflow->type == WTEMPERATURE_INFLOW )
-            {
-                w = inflow_getExtInflow(inflow, currentDate);
-                w *= q;
-                if (isnan(Node[j].newTemp) && (!isnan(w))) {Node[j].newTemp = 0.0;}
-                Node[j].newTemp += w;
-                massbal_addInflowTemp(EXTERNAL_INFLOW, w);
-            }
-            inflow = inflow->next;
-        }
+		if (TempModel.active == 1)
+		{
+			int hasWTempInflow = 0;
+			inflow = Node[j].extInflow;
+			while (inflow)
+	        {
+	            if (inflow->type == WTEMPERATURE_INFLOW )
+	            {
+	                w = inflow_getExtInflow(inflow, currentDate);
+	                w *= q;
+	                if (isnan(Node[j].newTemp) && (!isnan(w))) {Node[j].newTemp = 0.0;}
+	                Node[j].newTemp += w;
+	                massbal_addInflowTemp(EXTERNAL_INFLOW, w);
+	                hasWTempInflow = 1;
+	            }
+	            inflow = inflow->next;
+	        }
+			// --- if external flow inflow exists but no temperature was specified,
+			//     use initTemp as a default so the inflow does not act as 0-degree water
+			if (!hasWTempInflow && q > 0.0)
+			{
+				w = q * WTemperature.initTemp;
+				if (isnan(Node[j].newTemp)) Node[j].newTemp = 0.0;
+				Node[j].newTemp += w;
+				massbal_addInflowTemp(EXTERNAL_INFLOW, w);
+			}
+		}
 		/* END modification by Alejandro Figueroa | EAWAG */
     }
 }
