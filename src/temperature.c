@@ -283,7 +283,7 @@ void findNodeTemp(int j)
 {
 	double qNode;
 
-	// --- if there is flow into node then  = mass inflow/node flow
+	// --- if there is flow into node then temperature = mass inflow / node flow
 	qNode = Node[j].inflow;
 	if (qNode > ZERO)
 	{
@@ -293,9 +293,19 @@ void findNodeTemp(int j)
 		else
 			Node[j].newTemp /= qNode;
 	}
-	// set temperature to NaN, because 0 is a valid temperatur value
 	else
-		Node[j].newTemp = NAN;
+	{
+		// No inflow this time step.
+		// If the node still holds residual water (depth > 0) the thermal state
+		// of that water is unchanged — preserve the previous temperature rather
+		// than erasing it to NaN. Setting NaN here would incorrectly lose the
+		// temperature of trapped water (e.g. when a long upstream conduit
+		// temporarily delivers zero flow during the night DWF valley).
+		if (Node[j].newDepth > FUDGE)
+			Node[j].newTemp = Node[j].oldTemp;  // water present: keep last temperature
+		else
+			Node[j].newTemp = NAN;              // node is dry: no temperature
+	}
 
 }
 
