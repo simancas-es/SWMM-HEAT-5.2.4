@@ -73,14 +73,12 @@ void    temprout_init()
 
 	for (i = 0; i < Nobjects[NODE]; i++)
 	{
-		isWet = (Node[i].newDepth > FUDGE);
+		isWet = (Node[i].newDepth > FUDGE || Node[i].newVolume > ZeroVolume);
 
 			c =- NAN; // set temperature to NaN, because 0 is a valid temperatur value
 			if (isWet) {c = WTemperature.initTemp;}
 			Node[i].oldTemp = c;
 			Node[i].newTemp = c;
-			Link[i].oldTemp1 = c;
-			Link[i].oldTemp2 = c;
 
 		if (Node[i].type == STORAGE)
 		{
@@ -92,7 +90,7 @@ void    temprout_init()
 
 	for (i = 0; i < Nobjects[LINK]; i++)
 	{
-		isWet = (Link[i].newDepth > FUDGE);
+		isWet = (Link[i].newDepth > FUDGE || Link[i].newVolume > ZeroVolume);
 		//	if (strcmp(QualUnitsWords[Temperature.units], "CELSIUS") == 0 && TempModel.active == 1)
 				c =- NAN; // set temperature to NaN, because 0 is a valid temperatur value
 		//	else
@@ -100,6 +98,8 @@ void    temprout_init()
 			if (isWet) c = WTemperature.initTemp;
 			Link[i].oldTemp = c;
 			Link[i].newTemp = c;
+			Link[i].oldTemp1 = c;
+			Link[i].oldTemp2 = c;
 
 		int k = Link[i].subIndex;
 		// calculate the penetration depth for each conduit
@@ -401,12 +401,15 @@ void findLinkTemp(int i, double tStep, int month, int day, int hour)
 		if (!isnan(Node[j].newTemp)) {
 			c2 = Node[j].newTemp;
 		}
+		else if (v2 >= ZeroVolume) {
+			c2 = WTemperature.initTemp;
+		}
 		else c2 = NAN;
     }
 		// --- set concen. to zero if remaining volume is negligible
 		if (v2 < ZeroVolume)
 		{
-			massbal_addToFinalStorageT(c2 * v2);
+			if (!isnan(c2)) massbal_addToFinalStorageT(c2 * v2);
 
 			// set temperature to NaN, because 0 is a valid temperatur value
 				c2 =- NAN;
@@ -523,6 +526,9 @@ void findLinkTemps(int i, double tStep, double airt, double soilt)
 		if (!isnan(Node[j].newTemp)) {
 			c2 = Node[j].newTemp;
 		}
+		else if (v2 >= ZeroVolume) {
+			c2 = WTemperature.initTemp;
+		}
 		else c2 = NAN;
 	}
 
@@ -530,7 +536,7 @@ void findLinkTemps(int i, double tStep, double airt, double soilt)
 	// --- set temperature to soil temperature if remaining volume is negligible
 	if (v2 < ZeroVolume)
 	{
-		massbal_addToFinalStorageT(c2 * v2);
+		if (!isnan(c2)) massbal_addToFinalStorageT(c2 * v2);
 		// set temperature to NaN, because 0 is a valid temperatur value
 		c2 =- NAN;
 	}
@@ -623,7 +629,7 @@ void  findStorageTemp(int j, double tStep, int month, int day, int hour)
 		c1 = Node[j].oldTemp;
 
 		// --- update mass balance accounting for exfiltration loss
-		massbal_addSeepageLossT(qExfil * c1);
+		if (qExfil > 0.0 && !isnan(c1)) massbal_addSeepageLossT(qExfil * c1);
 
 		// --- increase concen. by evaporation factor
 		c1 *= fEvap;
@@ -644,7 +650,7 @@ void  findStorageTemp(int j, double tStep, int month, int day, int hour)
 		// --- set concen. to zero if remaining volume & inflow is negligible
 		if (Node[j].newVolume <= ZeroVolume && Node[j].newDepth <= FUDGE && qIn <= FLOW_TOL)
 		{
-			massbal_addToFinalStorageT(c2 * Node[j].newVolume);
+			if (!isnan(c2)) massbal_addToFinalStorageT(c2 * Node[j].newVolume);
 			c2 = NAN;
 		}
 
@@ -694,7 +700,7 @@ void  findStorageTemps(int j, double tStep, double airt, double soilt)
 	c1 = Node[j].oldTemp;
 
 	// --- update mass balance accounting for exfiltration loss
-	massbal_addSeepageLossT(qExfil * c1);
+	if (qExfil > 0.0 && !isnan(c1)) massbal_addSeepageLossT(qExfil * c1);
 
 	// --- increase concen. by evaporation factor
 	c1 *= fEvap;
@@ -714,7 +720,7 @@ void  findStorageTemps(int j, double tStep, double airt, double soilt)
 	// --- set concen. to zero if remaining volume & inflow is negligible
 	if (Node[j].newVolume <= ZeroVolume && Node[j].newDepth <= FUDGE && qIn <= FLOW_TOL)
 	{
-		massbal_addToFinalStorageT(c2 * Node[j].newVolume);
+		if (!isnan(c2)) massbal_addToFinalStorageT(c2 * Node[j].newVolume);
 		c2 = NAN;
 	}
 	// --- assign new concen. to node

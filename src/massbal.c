@@ -646,6 +646,7 @@ void massbal_addSeepageLossT(double w)
 //  Purpose: adds mass lost to seepage during current time step to routing totals.
 //
 {
+    if (isnan(w)) return;
     StepTempTotals.seepLoss += w;
 }
 /* END modification by Alejandro Figueroa | EAWAG */
@@ -674,6 +675,7 @@ void massbal_addToFinalStorageT(double w)
 //  Purpose: adds mass remaining on dry surface to routing totals.
 //
 {
+    if (isnan(w)) return;
     StepTempTotals.finalStorage += w;
 }
 /* END modification by Alejandro Figueroa | EAWAG */
@@ -1275,13 +1277,19 @@ double tempbal_getStoredMass()
 
     // --- get mass stored in nodes
     for (j = 0; j < Nobjects[NODE]; j++)
-        storedMass += Node[j].newVolume * Node[j].newTemp;
+    {
+        if (Node[j].newVolume > 0.0 && !isnan(Node[j].newTemp))
+            storedMass += Node[j].newVolume * Node[j].newTemp;
+    }
 
     // --- get mass stored in links (except for Steady Flow routing)
     if (RouteModel != SF)
     {
         for (j = 0; j < Nobjects[LINK]; j++)
-            storedMass += Link[j].newVolume * Link[j].newTemp;
+        {
+            if (Link[j].newVolume > 0.0 && !isnan(Link[j].newTemp))
+                storedMass += Link[j].newVolume * Link[j].newTemp;
+        }
     }
     return storedMass;
 }
