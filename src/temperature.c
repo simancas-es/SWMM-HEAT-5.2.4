@@ -54,8 +54,10 @@ static double getMixedTemp(double c, double v1, double wIn, double qIn,
 	double tStep);
 static double getReactedTemp(double oldTemp, int i, double tStep, int month, int day, int hour);
 static double getReactedTemps(double oldTemp, int i, double tStep, double airt, double soilt);
+static double getReactedTempByTemps(double oldTemp, int i, double tStep, double airTemp, double soilTemp);
 static double getReactedTempStNode(double oldTemp, int j, double tStep, int month, int day, int hour);
 static double getReactedTempStNodes(double oldTemp, int j, double tStep, double airt, double soilt);
+static double getFullPerimeter(TXsect* xsect);
 static double getWettedArea(TTable* table, double d);
 //=============================================================================
 
@@ -750,90 +752,13 @@ double getReactedTemp(double oldTemp, int i, double tStep, int month, int day, i
 //  Purpose: calculate the heat exchange by soil and air of the conduit
 //
 {
-	// local variables
 	int k = Link[i].subIndex;
-	double  thickness, width, velocity, wetp, length, flow, volume, kp, ks, hwa, Rwa, Rws, Ewa, Ews, area;
-	double  radius, penDepth, radThick, penThick, humidity;
-	double dryPerimeter, widthLength, windVel;
-	double deltaTa, deltaTs, deltaV;
-	double denom, deltaT;
-	double  ps0 = 1730000000.0;
-	double  ts0 = 5311.0;
-	double length2 = UCF(LENGTH) * UCF(LENGTH);
 	double soilTemp, airTemp;
-	double thermalExt;
-	// transform from FT to M
-	thickness = Conduit[k].thickness;
-	width = Conduit[k].oldwidth;
-	velocity = Conduit[k].velocity;
-	wetp = Conduit[k].oldwetp;
-	length = Conduit[k].length;
-	kp = Conduit[k].kPipe; // nothing to transform
-	ks = Conduit[k].kSoil; // nothing to transform
-	penDepth = Conduit[k].penDepth;
-	//flow = Link[i].newFlow * UCF(FLOW) / 1000; // m3/s
-	volume = Link[i].oldVolume * UCF(VOLUME); // m3
-	radius = Link[i].xsect.yFull * 0.50;
-	//area = Link[i].xsect.aFull * length2;
-	humidity = TempModel.humidity;
-	dryPerimeter = (6.28319 * radius - wetp) ;
-	widthLength = width * length * length2;
-	windVel = 0.397 * powl(width * velocity * UCF(LENGTH) / dryPerimeter, 0.7234);
-	//double prwat = 50000.0 / (oldTemp * (oldTemp + 155.0) + 3700.0);
-	//double dynvisc = 0.00002414 * powl(10.0, 247.8 / (oldTemp + 133.15));
-	//double hydradi = (Conduit[k].a1 + Conduit[k].a2) * UCF(LENGTH) / (2.0 * wetp);
-	//double reywat = 4.0 * hydradi * TempModel.density * velocity * UCF(LENGTH) / dynvisc;
 
 	// get insewer-air and soil temperature of the current month
 	soilTemp = getPatternFactor((int)Conduit[k].soilPat, month, day, hour);
 	airTemp = getPatternFactor((int)Conduit[k].airPat, month, day, hour);
-
-	// calculate temperature difference
-	deltaTa = airTemp - oldTemp;
-	deltaTs = soilTemp - oldTemp;
-
-	// calculate thermal resistivity for wastewater - air
-	deltaV = sqrt(ABS(velocity * UCF(LENGTH) - windVel));
-
-	if (deltaV > 0.001) // if the relative velocity is lower than 1 mm/s the thermal resistivity is 0 (prevent division by 0)
-	{
-		  // 	hwa = 5.85 * sqrt(deltaV);
-		 //  	Rwa = 1.0 / (hwa * width * length);
-		//   	Ewa = deltaTa / Rwa;
-		Ewa = widthLength * deltaV * (5.85 * deltaTa -
-	     	  8.75 * ps0 * (exp(-ts0 / (oldTemp + 273.15)) -
-			  humidity * exp(-ts0 / (airTemp + 273.15))));
-	}
-	else
-	{
-		//	Rwa = 0.0;
-		Ewa = 0.0;
-	}
-
-	// calculate thermal resistivity for wastewater - soil
-	//Rws = thickness / (kp * wetp * length) + Conduit[k].penDepth / (ks * wetp * length);
-	//Ews = deltaTs / Rws;
-	radThick = radius + thickness;
-	penThick = radThick + penDepth;
-	//radThick = radius  - thickness;
-	//penThick = radThick + radius;
-	//double radi = 1.0 / radius;
-	Ews = deltaTs * wetp * length * UCF(LENGTH) / (radius * (log(radThick / radius) / kp +
-		log(penThick / radThick) / ks)); //+
-		//hydradi / (0.023 * powl(reywat, 0.8) * powl(prwat, 0.3333) * 0.6));
-	// calculate the change in temperature over the given time step
-	//double denom = TempModel.density * TempModel.specHC * flow;
-	denom = TempModel.density * TempModel.specHC * volume;
-	deltaT = (Ewa + Ews) * tStep / denom;
-
-	// finally calculate the new temperature - Conduit[k].thermalEnergy leads to the change in temperature by heat exchanger depending on TempModel.extUnit
-	thermalExt = 0;
-	if (TempModel.extUnit == 'P')
-		thermalExt = (Conduit[k].thermalEnergy * 1000 * tStep / denom);
-	else if (TempModel.extUnit == 'T')
-		thermalExt = Conduit[k].thermalEnergy;
-	oldTemp += deltaT + thermalExt;
-	return oldTemp;
+	return getReactedTempByTemps(oldTemp, i, tStep, airTemp, soilTemp);
 }
 
 //=============================================================================
@@ -847,46 +772,56 @@ double getReactedTemps(double oldTemp, int i, double tStep, double airt, double 
 //  Purpose: calculate the heat exchange by soil and air of the conduit
 //
 {
-	// local variables
+	return getReactedTempByTemps(oldTemp, i, tStep, airt, soilt);
+}
+
+//=============================================================================
+
+static double getReactedTempByTemps(double oldTemp, int i, double tStep, double airTemp, double soilTemp)
+//
+//  Input:   oldTemp = temperature of the previous timestep (C)
+//           i = index of the current conduit
+//           tStep = time step (sec)
+//           airTemp = in-sewer air temperature (C)
+//           soilTemp = soil temperature (C)
+//  Output:  returns temperature at end of time step
+//  Purpose: calculate conduit heat exchange using actual cross-section geometry.
+//
+{
 	int k = Link[i].subIndex;
-	double  thickness, width, velocity, wetp, length, flow, volume, kp, ks, hwa, Rwa, Rws, Ewa, Ews, area;
-	double  radius, penDepth, radThick, penThick, humidity;
-	double dryPerimeter, widthLength, windVel;
+	double barrels = (double)Conduit[k].barrels;
+	double thickness, width, velocity, wetp, length, volume, kp, ks, Ewa, Ews;
+	double equivRadius, penDepth, radThick, penThick, humidity;
+	double fullPerimeter, dryPerimeter, widthLength, windVel;
 	double deltaTa, deltaTs, deltaV;
-	double denom, deltaT; 
+	double denom, deltaT;
 	double  ps0 = 1730000000.0;
 	double  ts0 = 5311.0;
 	double length2 = UCF(LENGTH) * UCF(LENGTH);
-	double soilTemp, airTemp;
 	double thermalExt;
-	// transform from FT to M
+
 	thickness = Conduit[k].thickness;
 	width = Conduit[k].oldwidth;
-	//width = Conduit[k].width;
 	velocity = Conduit[k].velocity;
 	wetp = Conduit[k].oldwetp;
-	//wetp = Conduit[k].wetp;
 	length = Conduit[k].length;
 	kp = Conduit[k].kPipe; // nothing to transform
 	ks = Conduit[k].kSoil; // nothing to transform
 	penDepth = Conduit[k].penDepth;
-	//flow = Link[i].newFlow * UCF(FLOW) / 1000; // m3/s
-//	flow = Link[i].oldFlow * UCF(FLOW);
 	volume = Link[i].oldVolume * UCF(VOLUME); // m3
-	radius = Link[i].xsect.yFull * 0.50;
-	//area = xsect_getAofY(&Link[i].xsect,Link[i].oldDepth) * length2;
 	humidity = TempModel.humidity;
-	dryPerimeter = (6.28319 * radius - wetp);
-	widthLength = width * length * length2;
-	windVel = 0.397 * powl(width * velocity * UCF(LENGTH) / dryPerimeter, 0.7234);
-	//double prwat = 50000.0 / (oldTemp * (oldTemp + 155.0) + 3700.0);
-	//double dynvisc = 0.00002414 * powl(10.0, 247.8 / (oldTemp + 133.15));
-	//double hydradi = (Conduit[k].a1 + Conduit[k].a2) * UCF(LENGTH) / (2.0 * wetp);
-	//double reywat = 4.0 * hydradi * TempModel.density * velocity * UCF(LENGTH) / dynvisc;
 
-	// get insewer-air and soil temperature of the current month
-	soilTemp = soilt;
-	airTemp = airt;
+	fullPerimeter = getFullPerimeter(&Link[i].xsect);
+	equivRadius = fullPerimeter / (2.0 * PI);
+	dryPerimeter = fullPerimeter - wetp;
+	if (dryPerimeter < FUDGE) dryPerimeter = FUDGE;
+	if (barrels < 1.0) barrels = 1.0;
+
+	widthLength = width * length * length2 * barrels;
+	if (width > FUDGE && dryPerimeter > FUDGE)
+		windVel = 0.397 * powl(width * ABS(velocity) * UCF(LENGTH) / dryPerimeter, 0.7234);
+	else
+		windVel = 0.0;
 
 	// calculate temperature difference
 	deltaTa = airTemp - oldTemp;
@@ -906,21 +841,26 @@ double getReactedTemps(double oldTemp, int i, double tStep, double airt, double 
 	}
 	else
 	{
-		//	Rwa = 0.0;
 		Ewa = 0.0;
 	}
 
 	// calculate thermal resistivity for wastewater - soil
-	//Rws = thickness / (kp * wetp * length * UCF(LENGTH) ) + Conduit[k].penDepth / (ks * wetp * length * UCF(LENGTH));
-	//Ews = deltaTs / Rws;
-	radThick = radius + thickness;
-	penThick = radThick + penDepth;
-	Ews = deltaTs * wetp * length * UCF(LENGTH) / (radius * (log(radThick / radius) / kp +
-		log(penThick / radThick) / ks)); //+
-	//hydradi / (0.023 * powl(reywat, 0.8) * powl(prwat, 0.3333) * 0.6 ));
+	Ews = 0.0;
+	if (wetp > FUDGE && equivRadius > FUDGE && kp > ZERO && ks > ZERO)
+	{
+		radThick = equivRadius + thickness;
+		penThick = radThick + penDepth;
+		if (radThick > equivRadius && penThick > radThick)
+		{
+			Ews = deltaTs * wetp * length * UCF(LENGTH) * barrels /
+				(equivRadius * (log(radThick / equivRadius) / kp +
+					log(penThick / radThick) / ks));
+		}
+	}
 	
 	// calculate the change in temperature over the given time step
 	denom = TempModel.density * TempModel.specHC * volume;
+	if (denom <= ZERO) return oldTemp;
 	deltaT = (Ewa + Ews)* tStep / denom;	
 	// finally calculate the new temperature - Conduit[k].thermalEnergy leads to the change in temperature by heat exchanger depending on TempModel.extUnit
 	thermalExt = 0;
@@ -930,6 +870,21 @@ double getReactedTemps(double oldTemp, int i, double tStep, double airt, double 
 		thermalExt = Conduit[k].thermalEnergy;
 	oldTemp += deltaT + thermalExt;
 	return oldTemp;
+}
+
+//=============================================================================
+
+static double getFullPerimeter(TXsect* xsect)
+//
+//  Input:   xsect = ptr. to conduit cross section data
+//  Output:  full wetted wall perimeter (ft)
+//  Purpose: finds the available wall perimeter for air/soil heat exchange.
+//
+{
+	if (xsect->rFull > FUDGE) return xsect->aFull / xsect->rFull;
+	if (xsect->type == CIRCULAR || xsect->type == FORCE_MAIN)
+		return PI * xsect->yFull;
+	return 0.0;
 }
 
 //=============================================================================

@@ -497,9 +497,14 @@ void initLinks(int routingModel)
             Conduit[k].a1 = xsect_getAofY(&Link[i].xsect, Link[i].newDepth);
             Conduit[k].a2 = Conduit[k].a1;
 			/* START modification by Alejandro Figueroa | Eawag */
-            Conduit[k].wetp = Conduit[k].a1/ getHydRad(&Link[i].xsect, Conduit[k].a1);
+            {
+                double hydRad = getHydRad(&Link[i].xsect, Link[i].newDepth);
+                Conduit[k].wetp = (hydRad > FUDGE) ? Conduit[k].a1 / hydRad : 0.0;
+            }
             Conduit[k].width = getWidth(&Link[i].xsect, Link[i].newDepth);
-            Conduit[k].velocity = Conduit[k].q1 / Conduit[k].a1;
+            Conduit[k].velocity = (Conduit[k].a1 > FUDGE) ? Conduit[k].q1 / Conduit[k].a1 : 0.0;
+            Conduit[k].oldwetp = Conduit[k].wetp;
+            Conduit[k].oldwidth = Conduit[k].width;
             /* END modification by Alejandro Figueroa | Eawag */
 
             // --- compute initial volume from area
