@@ -1,3 +1,11 @@
+SWMM-HEAT 5.2.4
+===============
+
+This project ports the EAWAG SWMM-HEAT module to EPA SWMM 5.2.4. It preserves the water-temperature routing and heat-exchange extensions from SWMM-HEAT while updating the codebase to the SWMM 5.2.4 engine. It incorporates some bug fixes and improvements.
+
+A GUI for SWMM-HEAT is available at https://github.com/simancas-es/SWMM-HEAT-5.2.4-GUI. It includes the functionality to see temperature output results in tables and graphs.
+
+
 CONTENTS OF SWMM524_ENGINE.ZIP
 ==============================
 
